@@ -95,6 +95,13 @@
       "@lexical/rich-text": "0.46.0",
       "@lexical/selection": "0.46.0",
       "@lexical/utils": "0.46.0"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@embedded-postgres/linux-arm64",
+      "es5-ext",
+      "esbuild",
+      "sharp",
+      "sqlite3"
+    ]
   }
 }

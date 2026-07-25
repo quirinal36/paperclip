@@ -5,5 +5,87 @@
       "description": "회사를 만들어 시작하세요.",
       "newCompany": "새 회사"
     }
+  },
+  "auth": {
+    "loading": "불러오는 중…",
+    "signIn": {
+      "title": "Paperclip에 로그인",
+      "subtitle": "이메일과 비밀번호로 이 인스턴스에 접속하세요."
+    },
+    "signUp": {
+      "title": "Paperclip 계정 만들기",
+      "subtitle": "이 인스턴스에서 사용할 계정을 만드세요. v1에서는 이메일 인증이 필요하지 않습니다."
+    },
+    "fields": {
+      "name": "이름",
+      "email": "이메일",
+      "password": "비밀번호"
+    },
+    "actions": {
+      "working": "처리 중…",
+      "signIn": "로그인",
+      "createAccount": "계정 만들기"
+    },
+    "switch": {
+      "toSignUpPrompt": "계정이 필요하신가요?",
+      "toSignUpAction": "계정 만들기",
+      "toSignInPrompt": "이미 계정이 있으신가요?",
+      "toSignInAction": "로그인"
+    },
+    "errors": {
+      "generic": "인증에 실패했습니다",
+      "requiredFields": "필수 항목을 모두 입력해 주세요."
+    }
+  },
+  "language": {
+    "switcher": {
+      "label": "언어 변경"
+    },
+    "menu": {
+      "label": "언어"
+    }
+  },
+  "theme": {
+    "toggle": {
+      "toLight": "라이트 모드로 전환",
+      "toDark": "다크 모드로 전환",
+      "description": "앱 화면 테마를 전환합니다."
+    }
+  },
+  "account": {
+    "menu": {
+      "open": "계정 메뉴 열기"
+    },
+    "badge": {
+      "account": "계정",
+      "local": "로컬"
+    },
+    "secondary": {
+      "signedIn": "로그인됨",
+      "localBoard": "로컬 워크스페이스 보드"
+    },
+    "actions": {
+      "viewProfile": {
+        "label": "프로필 보기",
+        "description": "활동·작업·사용 내역을 확인합니다."
+      },
+      "editProfile": {
+        "label": "프로필 편집",
+        "description": "표시 이름과 아바타를 변경합니다."
+      },
+      "documentation": {
+        "label": "문서",
+        "description": "Paperclip 문서를 새 탭에서 엽니다."
+      },
+      "feedback": {
+        "label": "피드백",
+        "description": "피드백을 보내거나 문제를 신고합니다."
+      },
+      "signOut": {
+        "label": "로그아웃",
+        "working": "로그아웃 중…",
+        "description": "이 브라우저 세션을 종료합니다."
+      }
+    }
   }
 }

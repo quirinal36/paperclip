@@ -32,10 +32,13 @@ for (const [locale, messages] of Object.entries(localeMessages)) {
   }
 }
 
-export const supportedLocales = Object.keys(localeMessages);
+export const supportedLocales: string[] = Object.keys(localeMessages);
 
 export const i18nextResources: Resource = Object.fromEntries(
   Object.entries(localeMessages).map(([locale, messages]) => [locale, { translation: messages }]),
 ) as Resource;
 
-export type SupportedLocale = keyof typeof localeMessages;
+// Locales are discovered at build time from the glob above, so there is no
+// static literal union to derive — a supported locale is any tag we shipped a
+// file for, validated at runtime via `supportedLocales`.
+export type SupportedLocale = string;

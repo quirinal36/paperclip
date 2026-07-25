@@ -12,11 +12,13 @@ import type { DeploymentMode, ServerGitInfo } from "@paperclipai/shared";
 import { Link } from "@/lib/router";
 import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/queryKeys";
+import { useTranslation } from "@/i18n";
 import { useSidebar } from "../context/SidebarContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn, SIDEBAR_RAIL_HIDDEN_LABEL } from "../lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { SidebarServerInfo } from "./SidebarServerInfo";
 import { Badge } from "@/components/ui/badge";
 
@@ -116,6 +118,7 @@ export function SidebarAccountMenu({
   serverGit,
   version,
 }: SidebarAccountMenuProps) {
+  const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { isMobile, setSidebarOpen, collapsed, peeking } = useSidebar();
@@ -139,8 +142,14 @@ export function SidebarAccountMenu({
 
   const displayName = session?.user.name?.trim() || "Board";
   const secondaryLabel =
-    session?.user.email?.trim() || (deploymentMode === "authenticated" ? "Signed in" : "Local workspace board");
-  const accountBadge = deploymentMode === "authenticated" ? "Account" : "Local";
+    session?.user.email?.trim() ||
+    (deploymentMode === "authenticated"
+      ? t("account.secondary.signedIn", { defaultValue: "Signed in" })
+      : t("account.secondary.localBoard", { defaultValue: "Local workspace board" }));
+  const accountBadge =
+    deploymentMode === "authenticated"
+      ? t("account.badge.account", { defaultValue: "Account" })
+      : t("account.badge.local", { defaultValue: "Local" });
   const initials = deriveInitials(displayName);
   const profileHref = `/u/${deriveUserSlug(session?.user.name, session?.user.email, session?.user.id)}`;
   const sourceSha = version ? sourceVersionSha(version) : null;
@@ -162,7 +171,7 @@ export function SidebarAccountMenu({
           <button
             type="button"
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-(length:--text-compact) font-medium text-foreground/80 transition-colors hover:bg-accent/50 hover:text-foreground"
-            aria-label="Open account menu"
+            aria-label={t("account.menu.open", { defaultValue: "Open account menu" })}
           >
             <Avatar size="sm">
               {session?.user.image ? <AvatarImage src={session.user.image} alt={displayName} /> : null}
@@ -226,35 +235,44 @@ export function SidebarAccountMenu({
 
             <div className="mt-4 space-y-1">
               <MenuAction
-                label="View profile"
-                description="Open your activity, task, and usage ledger."
+                label={t("account.actions.viewProfile.label", { defaultValue: "View profile" })}
+                description={t("account.actions.viewProfile.description", {
+                  defaultValue: "Open your activity, task, and usage ledger.",
+                })}
                 icon={UserRound}
                 href={profileHref}
                 onClick={closeNavigationChrome}
               />
               <MenuAction
-                label="Edit profile"
-                description="Update your display name and avatar."
+                label={t("account.actions.editProfile.label", { defaultValue: "Edit profile" })}
+                description={t("account.actions.editProfile.description", {
+                  defaultValue: "Update your display name and avatar.",
+                })}
                 icon={UserRoundPen}
                 href={PROFILE_SETTINGS_PATH}
                 onClick={closeNavigationChrome}
               />
               <MenuAction
-                label="Documentation"
-                description="Open Paperclip docs in a new tab."
+                label={t("account.actions.documentation.label", { defaultValue: "Documentation" })}
+                description={t("account.actions.documentation.description", {
+                  defaultValue: "Open Paperclip docs in a new tab.",
+                })}
                 icon={BookOpen}
                 href={DOCS_URL}
                 external
                 onClick={() => setOpen(false)}
               />
               <MenuAction
-                label="Feedback"
-                description="Share feedback or report an issue."
+                label={t("account.actions.feedback.label", { defaultValue: "Feedback" })}
+                description={t("account.actions.feedback.description", {
+                  defaultValue: "Share feedback or report an issue.",
+                })}
                 icon={Megaphone}
                 href={FEEDBACK_URL}
                 external
                 onClick={() => setOpen(false)}
               />
+              <LanguageSwitcher variant="menu-action" onAfterChange={() => setOpen(false)} />
               <ThemeToggle variant="menu-action" onAfterToggle={() => setOpen(false)} />
               {deploymentMode === "authenticated" ? (
                 <button
@@ -271,10 +289,12 @@ export function SidebarAccountMenu({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium text-foreground">
-                      {signOutMutation.isPending ? "Signing out..." : "Sign out"}
+                      {signOutMutation.isPending
+                        ? t("account.actions.signOut.working", { defaultValue: "Signing out..." })
+                        : t("account.actions.signOut.label", { defaultValue: "Sign out" })}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      End this browser session.
+                      {t("account.actions.signOut.description", { defaultValue: "End this browser session." })}
                     </span>
                   </span>
                 </button>

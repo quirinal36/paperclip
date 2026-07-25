@@ -5,5 +5,87 @@
       "description": "Get started by creating a company.",
       "newCompany": "New Company"
     }
+  },
+  "auth": {
+    "loading": "Loading…",
+    "signIn": {
+      "title": "Sign in to Paperclip",
+      "subtitle": "Use your email and password to access this instance."
+    },
+    "signUp": {
+      "title": "Create your Paperclip account",
+      "subtitle": "Create an account for this instance. Email confirmation is not required in v1."
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password"
+    },
+    "actions": {
+      "working": "Working…",
+      "signIn": "Sign In",
+      "createAccount": "Create Account"
+    },
+    "switch": {
+      "toSignUpPrompt": "Need an account?",
+      "toSignUpAction": "Create one",
+      "toSignInPrompt": "Already have an account?",
+      "toSignInAction": "Sign in"
+    },
+    "errors": {
+      "generic": "Authentication failed",
+      "requiredFields": "Please fill in all required fields."
+    }
+  },
+  "language": {
+    "switcher": {
+      "label": "Change language"
+    },
+    "menu": {
+      "label": "Language"
+    }
+  },
+  "theme": {
+    "toggle": {
+      "toLight": "Switch to light mode",
+      "toDark": "Switch to dark mode",
+      "description": "Toggle the app appearance."
+    }
+  },
+  "account": {
+    "menu": {
+      "open": "Open account menu"
+    },
+    "badge": {
+      "account": "Account",
+      "local": "Local"
+    },
+    "secondary": {
+      "signedIn": "Signed in",
+      "localBoard": "Local workspace board"
+    },
+    "actions": {
+      "viewProfile": {
+        "label": "View profile",
+        "description": "Open your activity, task, and usage ledger."
+      },
+      "editProfile": {
+        "label": "Edit profile",
+        "description": "Update your display name and avatar."
+      },
+      "documentation": {
+        "label": "Documentation",
+        "description": "Open Paperclip docs in a new tab."
+      },
+      "feedback": {
+        "label": "Feedback",
+        "description": "Share feedback or report an issue."
+      },
+      "signOut": {
+        "label": "Sign out",
+        "working": "Signing out...",
+        "description": "End this browser session."
+      }
+    }
   }
 }

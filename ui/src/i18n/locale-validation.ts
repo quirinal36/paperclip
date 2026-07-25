@@ -90,12 +90,12 @@ function validateNode(path: string[], candidate: unknown, englishReference: unkn
 
   const englishKeys = Object.keys(englishReference).sort();
   const candidateKeys = Object.keys(candidate).sort();
-  const missingKeys = englishKeys.filter((key) => !candidateKeys.includes(key));
   const extraKeys = candidateKeys.filter((key) => !englishKeys.includes(key));
 
-  for (const key of missingKeys) {
-    errors.push(`${formatPath([...path, key])} is missing`);
-  }
+  // Missing keys are allowed: i18next falls back to the English (fallbackLng)
+  // value at runtime, so non-English locales can be translated incrementally,
+  // one screen at a time, without having to backfill every other locale first.
+  // Extra keys are still rejected so typos and stale keys can't slip through.
   for (const key of extraKeys) {
     errors.push(`${formatPath([...path, key])} is not defined in English`);
   }

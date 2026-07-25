@@ -230,6 +230,7 @@ custom/<feature>  ← 개별 기능 작업 브랜치 → custom/main으로 병�
 
 ## 참고 문서 (repo 내부)
 
+- **UI 한글화(ko) 작업**: [`doc/KOREAN-LOCALIZATION.md`](doc/KOREAN-LOCALIZATION.md) — 화면 단위 한글화 절차·규칙·다음 후보 (fork 전용)
 - 개발 전반: [`doc/DEVELOPING.md`](doc/DEVELOPING.md)
 - 플러그인: [`doc/plugins/`](doc/plugins/)
 - 어댑터: [`packages/adapters/AUTHORING.md`](packages/adapters/AUTHORING.md), [`docs/adapters/`](docs/adapters/)

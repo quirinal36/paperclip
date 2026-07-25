@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUpDown, Check, CheckCircle2, GraduationCap, Inbox, Layers, ListFilter } from "lucide-react";
 import type { Agent, AttentionItem } from "@paperclipai/shared";
 import { useNavigate } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { attentionApi } from "../api/attention";
 import { agentsApi } from "../api/agents";
 import { authApi } from "../api/auth";
@@ -79,6 +80,7 @@ function findScrollContainer(element: HTMLElement | null): HTMLElement | null {
 }
 
 export function WhatNeedsMe() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -104,8 +106,8 @@ export function WhatNeedsMe() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Decisions" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("whatNeedsMe.breadcrumb", { defaultValue: "Decisions" }) }]);
+  }, [setBreadcrumbs, t]);
 
   // Re-hydrate per-company preferences when the company changes.
   useEffect(() => {
@@ -333,14 +335,17 @@ export function WhatNeedsMe() {
       pushToast({
         id: `attention-dismiss-${item.id}`,
         dedupeKey: `attention-dismiss-${item.dismissalKey}`,
-        title: "Dismissed",
+        title: t("whatNeedsMe.toast.dismissed", { defaultValue: "Dismissed" }),
         body: item.subject.title ?? undefined,
         tone: "info",
         ttlMs: 8000,
-        action: { label: "Undo", onClick: () => handleUndoDismiss(item) },
+        action: {
+          label: t("whatNeedsMe.actions.undo", { defaultValue: "Undo" }),
+          onClick: () => handleUndoDismiss(item),
+        },
       });
     },
-    [dismiss, handleUndoDismiss, pushToast],
+    [dismiss, handleUndoDismiss, pushToast, t],
   );
   const handleSnooze = useCallback(
     (item: AttentionItem, snoozedUntil: string) => {
@@ -411,7 +416,11 @@ export function WhatNeedsMe() {
   const activeFilterCount = countActiveAttentionFilters(filters);
 
   if (!selectedCompanyId) {
-    return <p className="text-sm text-muted-foreground">Select a company first.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("whatNeedsMe.selectCompanyFirst", { defaultValue: "Select a company first." })}
+      </p>
+    );
   }
 
   if (isLoading) {
@@ -424,15 +433,15 @@ export function WhatNeedsMe() {
     <div ref={rootRef} className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-xl font-bold">Decisions</h1>
+          <h1 className="text-xl font-bold">{t("whatNeedsMe.title", { defaultValue: "Decisions" })}</h1>
           <Button variant="outline" size="sm" onClick={() => navigate("/training")}>
-            <GraduationCap className="size-4" /> Training
+            <GraduationCap className="size-4" /> {t("whatNeedsMe.training.button", { defaultValue: "Training" })}
           </Button>
         </div>
         <div className="flex items-center gap-2">
           {visibleCount > 0 && (
             <span className="text-sm text-muted-foreground">
-              {visibleCount} {visibleCount === 1 ? "decision" : "decisions"}
+              {visibleCount} {visibleCount === 1 ? t("whatNeedsMe.count.decisionOne", { defaultValue: "decision" }) : t("whatNeedsMe.count.decisionOther", { defaultValue: "decisions" })}
             </span>
           )}
           {/* Filter */}
@@ -443,8 +452,8 @@ export function WhatNeedsMe() {
                 variant="outline"
                 size="icon"
                 className={cn("h-8 w-8 shrink-0", activeFilterCount > 0 && "bg-accent")}
-                title="Filter"
-                aria-label="Filter"
+                title={t("whatNeedsMe.filter.label", { defaultValue: "Filter" })}
+                aria-label={t("whatNeedsMe.filter.label", { defaultValue: "Filter" })}
               >
                 <ListFilter className="h-3.5 w-3.5" />
               </Button>
@@ -465,8 +474,8 @@ export function WhatNeedsMe() {
                 variant="outline"
                 size="icon"
                 className={cn("h-8 w-8 shrink-0", groupBy !== "none" && "bg-accent")}
-                title="Group"
-                aria-label="Group"
+                title={t("whatNeedsMe.group.label", { defaultValue: "Group" })}
+                aria-label={t("whatNeedsMe.group.label", { defaultValue: "Group" })}
               >
                 <Layers className="h-3.5 w-3.5" />
               </Button>
@@ -498,8 +507,8 @@ export function WhatNeedsMe() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 shrink-0"
-                title="Sort"
-                aria-label="Sort"
+                title={t("whatNeedsMe.sort.label", { defaultValue: "Sort" })}
+                aria-label={t("whatNeedsMe.sort.label", { defaultValue: "Sort" })}
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
               </Button>
@@ -577,7 +586,7 @@ export function WhatNeedsMe() {
 
           {snoozedItems.length > 0 && (
             <Curtain
-              label="Snoozed"
+              label={t("whatNeedsMe.curtain.snoozed", { defaultValue: "Snoozed" })}
               count={snoozedItems.length}
               open={snoozedOpen}
               onToggle={() => setSnoozedOpen((prev) => !prev)}
@@ -601,7 +610,7 @@ export function WhatNeedsMe() {
 
           {dismissedItems.length > 0 && (
             <Curtain
-              label="Dismissed"
+              label={t("whatNeedsMe.curtain.dismissed", { defaultValue: "Dismissed" })}
               count={dismissedItems.length}
               open={dismissedOpen}
               onToggle={() => setDismissedOpen((prev) => !prev)}
@@ -647,6 +656,7 @@ function FilterMenu({
   filters: AttentionFilterState;
   onChange: (next: AttentionFilterState) => void;
 }) {
+  const { t } = useTranslation();
   const toggle = (key: keyof AttentionFilterState, value: string) => {
     const list = filters[key] as string[];
     const nextList = list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -657,20 +667,20 @@ function FilterMenu({
   return (
     <div className="max-h-(--sz-70vh) overflow-y-auto">
       <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Filter</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("whatNeedsMe.filter.label", { defaultValue: "Filter" })}</span>
         {hasActive && (
           <button
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground"
             onClick={() => onChange(defaultAttentionFilterState)}
           >
-            Clear
+            {t("whatNeedsMe.actions.clear", { defaultValue: "Clear" })}
           </button>
         )}
       </div>
 
       {options.sourceKinds.length > 1 && (
-        <FilterSection title="Type">
+        <FilterSection title={t("whatNeedsMe.filter.sections.type", { defaultValue: "Type" })}>
           {options.sourceKinds.map((kind) => (
             <FilterRow
               key={kind}
@@ -683,11 +693,11 @@ function FilterMenu({
       )}
 
       {options.severities.length > 1 && (
-        <FilterSection title="Severity">
+        <FilterSection title={t("whatNeedsMe.filter.sections.severity", { defaultValue: "Severity" })}>
           {options.severities.map((severity) => (
             <FilterRow
               key={severity}
-              label={SEVERITY_LABELS[severity] ?? severity}
+              label={t(`whatNeedsMe.severity.${severity}`, { defaultValue: SEVERITY_LABELS[severity] ?? severity })}
               checked={filters.severities.includes(severity)}
               onToggle={() => toggle("severities", severity)}
             />
@@ -696,7 +706,7 @@ function FilterMenu({
       )}
 
       {(options.projects.length > 0 || options.hasNoProject) && (
-        <FilterSection title="Project">
+        <FilterSection title={t("whatNeedsMe.filter.sections.project", { defaultValue: "Project" })}>
           {options.projects.map((project) => (
             <FilterRow
               key={project.id}
@@ -707,7 +717,7 @@ function FilterMenu({
           ))}
           {options.hasNoProject && (
             <FilterRow
-              label="No project"
+              label={t("whatNeedsMe.filter.noProject", { defaultValue: "No project" })}
               checked={filters.projectIds.includes(NO_GROUP_SENTINEL)}
               onToggle={() => toggle("projectIds", NO_GROUP_SENTINEL)}
             />
@@ -716,7 +726,7 @@ function FilterMenu({
       )}
 
       {(options.workspaces.length > 0 || options.hasNoWorkspace) && (
-        <FilterSection title="Workspace">
+        <FilterSection title={t("whatNeedsMe.filter.sections.workspace", { defaultValue: "Workspace" })}>
           {options.workspaces.map((workspace) => (
             <FilterRow
               key={workspace.id}
@@ -727,7 +737,7 @@ function FilterMenu({
           ))}
           {options.hasNoWorkspace && (
             <FilterRow
-              label="No workspace"
+              label={t("whatNeedsMe.filter.noWorkspace", { defaultValue: "No workspace" })}
               checked={filters.workspaceIds.includes(NO_GROUP_SENTINEL)}
               onToggle={() => toggle("workspaceIds", NO_GROUP_SENTINEL)}
             />
@@ -798,28 +808,40 @@ function Curtain({
 }
 
 function CaughtUpNote({ filtered }: { filtered: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-dashed border-border py-10 text-center">
       <p className="text-sm font-medium text-foreground">
-        {filtered ? "No decisions match your filters." : "You're all caught up."}
+        {filtered
+          ? t("whatNeedsMe.caughtUp.noMatch", { defaultValue: "No decisions match your filters." })
+          : t("whatNeedsMe.caughtUp.allClear", { defaultValue: "You're all caught up." })}
       </p>
       {filtered && (
-        <p className="mt-1 text-xs text-muted-foreground">Adjust or clear the filters to see the rest.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t("whatNeedsMe.caughtUp.adjustFilters", {
+            defaultValue: "Adjust or clear the filters to see the rest.",
+          })}
+        </p>
       )}
     </div>
   );
 }
 
 function ZeroState() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20 text-center">
       <div className="mb-4 rounded-full bg-green-500/10 p-4">
         <CheckCircle2 className="h-10 w-10 text-green-500" />
       </div>
-      <p className="text-lg font-semibold text-foreground">You're all caught up</p>
+      <p className="text-lg font-semibold text-foreground">
+        {t("whatNeedsMe.zeroState.title", { defaultValue: "You're all caught up" })}
+      </p>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
         <Inbox className="h-4 w-4" />
-        Nothing needs a decision from you right now.
+        {t("whatNeedsMe.zeroState.subtitle", {
+          defaultValue: "Nothing needs a decision from you right now.",
+        })}
       </p>
     </div>
   );

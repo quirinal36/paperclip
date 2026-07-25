@@ -21,6 +21,7 @@ import { EmptyState } from "../components/EmptyState";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { MarkdownBody } from "../components/MarkdownBody";
 import { toCompanyRelativePath } from "@/lib/company-routes";
+import { useTranslation } from "@/i18n";
 import { cn } from "../lib/utils";
 import { queryKeys } from "../lib/queryKeys";
 import { createZipArchive } from "../lib/zip";
@@ -499,9 +500,10 @@ function ExportPreviewPane({
   allFiles: Record<string, CompanyPortabilityFileEntry>;
   onSkillClick?: (skill: string) => void;
 }) {
+  const { t } = useTranslation();
   if (!selectedFile || content === null) {
     return (
-      <EmptyState icon={Package} message="Select a file to preview its contents." />
+      <EmptyState icon={Package} message={t("companyExport.preview.selectFile", { defaultValue: "Select a file to preview its contents." })} />
     );
   }
 
@@ -547,7 +549,7 @@ function ExportPreviewPane({
           </pre>
         ) : (
           <div className="rounded-lg border border-border bg-accent/10 px-4 py-3 text-sm text-muted-foreground">
-            Binary asset preview is not available for this file type.
+            {t("companyExport.preview.binaryUnavailable", { defaultValue: "Binary asset preview is not available for this file type." })}
           </div>
         )}
       </div>
@@ -580,6 +582,7 @@ function expandAncestors(filePath: string): string[] {
 }
 
 export function CompanyExport() {
+  const { t } = useTranslation();
   const { selectedCompanyId, selectedCompany } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const { pushToast } = useToastActions();
@@ -674,10 +677,10 @@ export function CompanyExport() {
 
   useEffect(() => {
     setBreadcrumbs([
-      { label: "Org Chart", href: "/org" },
-      { label: "Export" },
+      { label: t("companyExport.breadcrumbs.orgChart", { defaultValue: "Org Chart" }), href: "/org" },
+      { label: t("companyExport.breadcrumbs.export", { defaultValue: "Export" }) },
     ]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   const exportPreviewMutation = useMutation({
     mutationFn: () =>
@@ -721,8 +724,8 @@ export function CompanyExport() {
     onError: (err) => {
       pushToast({
         tone: "error",
-        title: "Export failed",
-        body: err instanceof Error ? err.message : "Failed to load export data.",
+        title: t("companyExport.toast.exportFailed.title", { defaultValue: "Export failed" }),
+        body: err instanceof Error ? err.message : t("companyExport.toast.loadFailed.body", { defaultValue: "Failed to load export data." }),
       });
     },
   });
@@ -739,15 +742,25 @@ export function CompanyExport() {
       downloadZip(result, resultCheckedFiles, result.files);
       pushToast({
         tone: "success",
-        title: "Export downloaded",
-        body: `${resultCheckedFiles.size} file${resultCheckedFiles.size === 1 ? "" : "s"} exported as ${result.rootPath}.zip`,
+        title: t("companyExport.toast.downloaded.title", { defaultValue: "Export downloaded" }),
+        body: resultCheckedFiles.size === 1
+          ? t("companyExport.toast.downloaded.bodySingular", {
+              defaultValue: "{{count}} file exported as {{rootPath}}.zip",
+              count: resultCheckedFiles.size,
+              rootPath: result.rootPath,
+            })
+          : t("companyExport.toast.downloaded.bodyPlural", {
+              defaultValue: "{{count}} files exported as {{rootPath}}.zip",
+              count: resultCheckedFiles.size,
+              rootPath: result.rootPath,
+            }),
       });
     },
     onError: (err) => {
       pushToast({
         tone: "error",
-        title: "Export failed",
-        body: err instanceof Error ? err.message : "Failed to build export package.",
+        title: t("companyExport.toast.exportFailed.title", { defaultValue: "Export failed" }),
+        body: err instanceof Error ? err.message : t("companyExport.toast.buildFailed.body", { defaultValue: "Failed to build export package." }),
       });
     },
   });
@@ -913,7 +926,7 @@ export function CompanyExport() {
   }
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={Package} message="Select a company to export." />;
+    return <EmptyState icon={Package} message={t("companyExport.empty.selectCompany", { defaultValue: "Select a company to export." })} />;
   }
 
   if (exportPreviewMutation.isPending && !exportData) {
@@ -921,7 +934,7 @@ export function CompanyExport() {
   }
 
   if (!exportData) {
-    return <EmptyState icon={Package} message="Loading export data..." />;
+    return <EmptyState icon={Package} message={t("companyExport.empty.loading", { defaultValue: "Loading export data..." })} />;
   }
 
   const previewContent = selectedFile
@@ -937,14 +950,29 @@ export function CompanyExport() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <span className="font-medium">
-              {selectedCompany?.name ?? "Company"} export
+              {t("companyExport.header.title", {
+                defaultValue: "{{name}} export",
+                name: selectedCompany?.name ?? t("companyExport.companyFallback", { defaultValue: "Company" }),
+              })}
             </span>
             <span className="text-muted-foreground">
-              {selectedCount} / {totalFiles} file{totalFiles === 1 ? "" : "s"} selected
+              {totalFiles === 1
+                ? t("companyExport.header.filesSelectedSingular", {
+                    defaultValue: "{{selected}} / {{total}} file selected",
+                    selected: selectedCount,
+                    total: totalFiles,
+                  })
+                : t("companyExport.header.filesSelectedPlural", {
+                    defaultValue: "{{selected}} / {{total}} files selected",
+                    selected: selectedCount,
+                    total: totalFiles,
+                  })}
             </span>
             {warnings.length > 0 && (
               <span className="text-amber-500">
-                {warnings.length} warning{warnings.length === 1 ? "" : "s"}
+                {warnings.length === 1
+                  ? t("companyExport.warnings.countSingular", { defaultValue: "{{count}} warning", count: warnings.length })
+                  : t("companyExport.warnings.countPlural", { defaultValue: "{{count}} warnings", count: warnings.length })}
               </span>
             )}
           </div>
@@ -955,8 +983,10 @@ export function CompanyExport() {
           >
             <Download className="mr-1.5 h-3.5 w-3.5" />
             {downloadMutation.isPending
-              ? "Building export..."
-              : `Export ${selectedCount} file${selectedCount === 1 ? "" : "s"}`}
+              ? t("companyExport.actions.building", { defaultValue: "Building export..." })
+              : selectedCount === 1
+                ? t("companyExport.actions.exportFilesSingular", { defaultValue: "Export {{count}} file", count: selectedCount })
+                : t("companyExport.actions.exportFilesPlural", { defaultValue: "Export {{count}} files", count: selectedCount })}
           </Button>
         </div>
       </div>
@@ -974,7 +1004,7 @@ export function CompanyExport() {
       <div className="grid gap-4 xl:h-(--sz-calc-30) xl:grid-cols-(--gtc-25) xl:gap-0">
         <aside className="flex max-h-(--sz-24rem) flex-col overflow-hidden border-b border-border xl:max-h-none xl:border-b-0 xl:border-r">
           <div className="border-b border-border px-4 py-3 shrink-0">
-            <h2 className="text-base font-semibold">Package files</h2>
+            <h2 className="text-base font-semibold">{t("companyExport.sidebar.title", { defaultValue: "Package files" })}</h2>
           </div>
           <div className="border-b border-border px-3 py-2 shrink-0">
             <div className="flex items-center gap-2 rounded-md border border-border px-2 py-1">
@@ -983,7 +1013,7 @@ export function CompanyExport() {
                 type="text"
                 value={treeSearch}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search files..."
+                placeholder={t("companyExport.search.placeholder", { defaultValue: "Search files..." })}
                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                 data-page-search-target="true"
               />
@@ -1007,7 +1037,11 @@ export function CompanyExport() {
                   onClick={() => setTaskLimit((prev) => prev + TASKS_PAGE_SIZE)}
                   className="w-full rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent/30 hover:text-foreground transition-colors"
                 >
-                  Show more tasks ({visibleTaskChildren} of {totalTaskChildren})
+                  {t("companyExport.tasks.showMore", {
+                    defaultValue: "Show more tasks ({{visible}} of {{total}})",
+                    visible: visibleTaskChildren,
+                    total: totalTaskChildren,
+                  })}
                 </button>
               </div>
             )}

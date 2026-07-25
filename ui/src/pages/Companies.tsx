@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/i18n";
 import {
   Pencil,
   Check,
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 
 export function Companies() {
+  const { t } = useTranslation();
   const {
     companies,
     selectedCompanyId,
@@ -71,8 +73,8 @@ export function Companies() {
   });
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Companies" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("companies.breadcrumb", { defaultValue: "Companies" }) }]);
+  }, [setBreadcrumbs, t]);
 
   function startEdit(companyId: string, currentName: string) {
     setEditingId(companyId);
@@ -94,12 +96,12 @@ export function Companies() {
       <div className="flex items-center justify-end">
         <Button size="sm" onClick={() => openOnboarding()}>
           <Plus className="h-3.5 w-3.5 mr-1.5" />
-          New Company
+          {t("companies.actions.newCompany", { defaultValue: "New Company" })}
         </Button>
       </div>
 
       <div className="h-6">
-        {loading && <p className="text-sm text-muted-foreground">Loading companies...</p>}
+        {loading && <p className="text-sm text-muted-foreground">{t("companies.loading", { defaultValue: "Loading companies..." })}</p>}
         {error && <p className="text-sm text-destructive">{error.message}</p>}
       </div>
 
@@ -216,7 +218,7 @@ export function Companies() {
                         onClick={() => startEdit(company.id, company.name)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                        Rename
+                        {t("companies.actions.rename", { defaultValue: "Rename" })}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -224,7 +226,7 @@ export function Companies() {
                         onClick={() => setConfirmDeleteId(company.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Delete Company
+                        {t("companies.actions.deleteCompany", { defaultValue: "Delete Company" })}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -236,13 +238,13 @@ export function Companies() {
                 <div className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5" />
                   <span>
-                    {agentCount} {agentCount === 1 ? "agent" : "agents"}
+                    {agentCount} {agentCount === 1 ? t("companies.units.agent", { defaultValue: "agent" }) : t("companies.units.agents", { defaultValue: "agents" })}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CircleDot className="h-3.5 w-3.5" />
                   <span>
-                    {issueCount} {issueCount === 1 ? "task" : "tasks"}
+                    {issueCount} {issueCount === 1 ? t("companies.units.task", { defaultValue: "task" }) : t("companies.units.tasks", { defaultValue: "tasks" })}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 tabular-nums">
@@ -251,12 +253,12 @@ export function Companies() {
                     {formatCents(company.spentMonthlyCents)}
                     {company.budgetMonthlyCents > 0
                       ? <> / {formatCents(company.budgetMonthlyCents)} <span className="text-xs">({budgetPct}%)</span></>
-                      : <span className="text-xs ml-1">Unlimited budget</span>}
+                      : <span className="text-xs ml-1">{t("companies.stats.unlimitedBudget", { defaultValue: "Unlimited budget" })}</span>}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 ml-auto">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>Created {relativeTime(company.createdAt)}</span>
+                  <span>{t("companies.stats.created", { defaultValue: "Created {{time}}", time: relativeTime(company.createdAt) })}</span>
                 </div>
               </div>
 
@@ -267,7 +269,7 @@ export function Companies() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <p className="text-sm text-destructive font-medium">
-                    Delete this company and all its data? This cannot be undone.
+                    {t("companies.deleteConfirm.message", { defaultValue: "Delete this company and all its data? This cannot be undone." })}
                   </p>
                   <div className="flex items-center gap-2 ml-4 shrink-0">
                     <Button
@@ -276,7 +278,7 @@ export function Companies() {
                       onClick={() => setConfirmDeleteId(null)}
                       disabled={deleteMutation.isPending}
                     >
-                      Cancel
+                      {t("companies.actions.cancel", { defaultValue: "Cancel" })}
                     </Button>
                     <Button
                       variant="destructive"
@@ -284,7 +286,7 @@ export function Companies() {
                       onClick={() => deleteMutation.mutate(company.id)}
                       disabled={deleteMutation.isPending}
                     >
-                      {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                      {deleteMutation.isPending ? t("companies.actions.deleting", { defaultValue: "Deleting…" }) : t("companies.actions.delete", { defaultValue: "Delete" })}
                     </Button>
                   </div>
                 </div>

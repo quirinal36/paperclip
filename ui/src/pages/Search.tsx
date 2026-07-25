@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useNavigate, useSearchParams } from "@/lib/router";
+import { t, useTranslation } from "@/i18n";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useDialogActions } from "../context/DialogContext";
@@ -60,13 +61,13 @@ const SEARCH_DEBOUNCE_MS = 250;
 const IDENTIFIER_PATTERN = /^[A-Z]+-\d+$/;
 
 const SCOPE_LABELS: Record<CompanySearchScope, string> = {
-  all: "All",
-  issues: "Tasks",
-  comments: "Comments",
-  documents: "Documents",
-  artifacts: "Artifacts",
-  agents: "Agents",
-  projects: "Projects",
+  all: t("search.scopes.all", { defaultValue: "All" }),
+  issues: t("search.scopes.tasks", { defaultValue: "Tasks" }),
+  comments: t("search.scopes.comments", { defaultValue: "Comments" }),
+  documents: t("search.scopes.documents", { defaultValue: "Documents" }),
+  artifacts: t("search.scopes.artifacts", { defaultValue: "Artifacts" }),
+  agents: t("search.scopes.agents", { defaultValue: "Agents" }),
+  projects: t("search.scopes.projects", { defaultValue: "Projects" }),
 };
 
 type SubGroupKey = "issues" | "comments" | "documents" | "artifacts" | "agents" | "projects";
@@ -74,12 +75,12 @@ type SubGroupKey = "issues" | "comments" | "documents" | "artifacts" | "agents" 
 const SUBGROUP_ORDER: SubGroupKey[] = ["issues", "comments", "documents", "artifacts", "agents", "projects"];
 
 const SUBGROUP_LABELS: Record<SubGroupKey, string> = {
-  issues: "Tasks",
-  comments: "Comments",
-  documents: "Documents",
-  artifacts: "Artifacts",
-  agents: "Agents",
-  projects: "Projects",
+  issues: t("search.scopes.tasks", { defaultValue: "Tasks" }),
+  comments: t("search.scopes.comments", { defaultValue: "Comments" }),
+  documents: t("search.scopes.documents", { defaultValue: "Documents" }),
+  artifacts: t("search.scopes.artifacts", { defaultValue: "Artifacts" }),
+  agents: t("search.scopes.agents", { defaultValue: "Agents" }),
+  projects: t("search.scopes.projects", { defaultValue: "Projects" }),
 };
 
 function classifyResult(result: CompanySearchResult): SubGroupKey {
@@ -112,7 +113,7 @@ function isCompanySearchScope(value: string | null): value is CompanySearchScope
 }
 
 function describeScope(scope: CompanySearchScope) {
-  if (scope === "all") return "All scopes";
+  if (scope === "all") return t("search.scopes.allScopes", { defaultValue: "All scopes" });
   return SCOPE_LABELS[scope];
 }
 
@@ -171,6 +172,7 @@ function shapeError(error: unknown): { message: string; status?: number } {
 }
 
 export function Search() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const { openNewIssue } = useDialogActions();
@@ -196,8 +198,8 @@ export function Search() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Search" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("search.title", { defaultValue: "Search" }) }]);
+  }, [setBreadcrumbs, t]);
 
   useEffect(() => {
     if (!selectedCompanyId) return;
@@ -587,7 +589,7 @@ export function Search() {
   return (
     <div className="flex h-full min-h-0 flex-col" data-page="search">
       <div className="border-b border-border px-4 py-3 sm:px-6">
-        <h1 className="sr-only">Search</h1>
+        <h1 className="sr-only">{t("search.title", { defaultValue: "Search" })}</h1>
         <div className="relative">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -607,15 +609,15 @@ export function Search() {
                 }
               }
             }}
-            placeholder="Search tasks, comments, documents, artifacts, agents, projects…"
-            aria-label="Search query"
+            placeholder={t("search.input.placeholder", { defaultValue: "Search tasks, comments, documents, artifacts, agents, projects…" })}
+            aria-label={t("search.input.ariaLabel", { defaultValue: "Search query" })}
             className="h-10 pl-9 pr-20 text-sm"
           />
           {draftQuery.length > 0 ? (
             <button
               type="button"
               onClick={handleClear}
-              aria-label="Clear search"
+              aria-label={t("search.clearSearch", { defaultValue: "Clear search" })}
               className="absolute right-12 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent/50"
             >
               <X className="h-3.5 w-3.5" />
@@ -644,7 +646,7 @@ export function Search() {
                 <button
                   key={suggestion.token}
                   type="button"
-                  aria-label={`Insert operator ${suggestion.token}`}
+                  aria-label={t("search.operator.insertAriaLabel", { defaultValue: "Insert operator {{token}}", token: suggestion.token })}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     setDraftQuery(applySearchOperatorSuggestion(draftQuery, suggestion.token));
@@ -659,9 +661,9 @@ export function Search() {
             </div>
           ) : (
             <span className="truncate">
-              Try <code className="rounded bg-muted px-1 py-0.5 text-(length:--text-micro)">status:todo</code>,{" "}
+              {t("search.tips.tryPrefix", { defaultValue: "Try " })}<code className="rounded bg-muted px-1 py-0.5 text-(length:--text-micro)">status:todo</code>,{" "}
               <code className="rounded bg-muted px-1 py-0.5 text-(length:--text-micro)">assignee:me</code>,{" "}
-              or <code className="rounded bg-muted px-1 py-0.5 text-(length:--text-micro)">updated:&gt;7d</code>.
+              {t("search.tips.orConnector", { defaultValue: "or " })}<code className="rounded bg-muted px-1 py-0.5 text-(length:--text-micro)">updated:&gt;7d</code>.
             </span>
           )}
         </div>
@@ -801,19 +803,20 @@ function SearchTabContent({
   isFetching,
   agentsById,
 }: SearchTabContentProps) {
+  const { t } = useTranslation();
   if (showInitialState) {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-10 sm:px-6">
         <div>
-          <h2 className="text-lg font-semibold">Type to search company memory.</h2>
+          <h2 className="text-lg font-semibold">{t("search.initial.title", { defaultValue: "Type to search company memory." })}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Tasks, comments, plan documents, artifacts, agents, projects — same surface, ranked by relevance.
+            {t("search.initial.subtitle", { defaultValue: "Tasks, comments, plan documents, artifacts, agents, projects — same surface, ranked by relevance." })}
           </p>
         </div>
         {recentSearches.length > 0 ? (
           <div>
             <div className="mb-2 text-(length:--text-micro) font-semibold uppercase tracking-wide text-muted-foreground">
-              Recent searches
+              {t("search.recent.heading", { defaultValue: "Recent searches" })}
             </div>
             <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
               {recentSearches.map((entry) => (
@@ -833,16 +836,18 @@ function SearchTabContent({
         ) : null}
         <ul className="space-y-1 text-xs text-muted-foreground">
           <li>
-            <span className="font-medium text-foreground">Identifier lookup:</span> type{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-(length:--text-micro)">PAP-123</code> to jump straight to a task.
+            <span className="font-medium text-foreground">{t("search.initial.tips.identifier.label", { defaultValue: "Identifier lookup:" })}</span>{" "}
+            {t("search.initial.tips.identifier.type", { defaultValue: "type" })}{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-(length:--text-micro)">PAP-123</code>{" "}
+            {t("search.initial.tips.identifier.suffix", { defaultValue: "to jump straight to a task." })}
           </li>
           <li>
-            <span className="font-medium text-foreground">Quoted phrases:</span> wrap a phrase in quotes to match the
-            exact sequence.
+            <span className="font-medium text-foreground">{t("search.initial.tips.quoted.label", { defaultValue: "Quoted phrases:" })}</span>{" "}
+            {t("search.initial.tips.quoted.description", { defaultValue: "wrap a phrase in quotes to match the exact sequence." })}
           </li>
           <li>
-            <span className="font-medium text-foreground">⌘K:</span> reopens the command palette pre-seeded with your
-            current query.
+            <span className="font-medium text-foreground">⌘K:</span>{" "}
+            {t("search.initial.tips.commandPalette.description", { defaultValue: "reopens the command palette pre-seeded with your current query." })}
           </li>
         </ul>
       </div>
@@ -854,17 +859,19 @@ function SearchTabContent({
     return (
       <div className="mx-auto flex w-full max-w-xl flex-col items-center justify-center gap-3 px-4 py-12 text-center">
         <AlertTriangle className="h-10 w-10 text-destructive" aria-hidden />
-        <div className="text-base font-semibold">Couldn’t run that search</div>
+        <div className="text-base font-semibold">{t("search.error.title", { defaultValue: "Couldn’t run that search" })}</div>
         <p className="text-sm text-muted-foreground">
-          {status ? `The server returned ${status}.` : "The request failed."} Your input and filters are still here, so
-          you can retry or fall back to the Tasks filter.
+          {status
+            ? t("search.error.serverReturned", { defaultValue: "The server returned {{status}}.", status })
+            : t("search.error.requestFailed", { defaultValue: "The request failed." })}{" "}
+          {t("search.error.recovery", { defaultValue: "Your input and filters are still here, so you can retry or fall back to the Tasks filter." })}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button onClick={refetch} variant="default" size="sm">
-            Retry
+            {t("search.actions.retry", { defaultValue: "Retry" })}
           </Button>
           <Button onClick={navigateIssuesFallback} variant="outline" size="sm">
-            Open Tasks filter view
+            {t("search.actions.openTasksFilter", { defaultValue: "Open Tasks filter view" })}
           </Button>
         </div>
       </div>
@@ -875,7 +882,7 @@ function SearchTabContent({
     return (
       <div className="flex flex-col gap-2 px-2 py-3 sm:px-4">
         <div className="px-3 text-xs text-muted-foreground" data-testid="search-loading">
-          Searching for &ldquo;{trimmedQuery}&rdquo;…
+          {t("search.loading.searchingFor", { defaultValue: "Searching for “{{query}}”…", query: trimmedQuery })}
         </div>
         <div className="flex flex-col">
           <div className="px-3 py-2">

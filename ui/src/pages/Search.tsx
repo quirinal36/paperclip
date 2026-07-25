@@ -909,31 +909,31 @@ function SearchTabContent({
     return (
       <div className="mx-auto flex w-full max-w-xl flex-col items-center justify-center gap-3 px-4 py-12 text-center">
         <FileQuestion className="h-10 w-10 text-muted-foreground" aria-hidden />
-        <div className="text-base font-semibold">No results for &ldquo;{trimmedQuery}&rdquo;</div>
+        <div className="text-base font-semibold">{t("search.empty.title", { defaultValue: "No results for “{{query}}”", query: trimmedQuery })}</div>
         <p className="text-sm text-muted-foreground">
-          We couldn’t find a match in {describeScope(scope).toLowerCase()}. Try widening the scope or rephrasing your
-          query.
+          {t("search.empty.description", { defaultValue: "We couldn’t find a match in {{scope}}. Try widening the scope or rephrasing your query.", scope: describeScope(scope).toLowerCase() })}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           {scope !== "all" ? (
             <Button onClick={showAllScope} size="sm" variant="outline">
-              Search all scopes
+              {t("search.actions.searchAllScopes", { defaultValue: "Search all scopes" })}
             </Button>
           ) : null}
           <Button onClick={openNewIssue} size="sm" variant="default">
             <Plus className="mr-1.5 h-4 w-4" />
-            Create task from this query
+            {t("search.actions.createTask", { defaultValue: "Create task from this query" })}
           </Button>
           <Button onClick={navigateIssuesFallback} size="sm" variant="ghost">
-            Open Tasks filter view
+            {t("search.actions.openTasksFilter", { defaultValue: "Open Tasks filter view" })}
           </Button>
         </div>
         <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-          <li>Try fewer tokens or a single distinctive term.</li>
+          <li>{t("search.empty.tips.fewerTokens", { defaultValue: "Try fewer tokens or a single distinctive term." })}</li>
           <li>
-            Use an identifier shortcut like <code className="rounded bg-muted px-1 py-0.5">PAP-123</code>.
+            {t("search.empty.tips.identifierShortcut", { defaultValue: "Use an identifier shortcut like " })}
+            <code className="rounded bg-muted px-1 py-0.5">PAP-123</code>.
           </li>
-          <li>Wrap multi-word phrases in quotes.</li>
+          <li>{t("search.empty.tips.wrapPhrases", { defaultValue: "Wrap multi-word phrases in quotes." })}</li>
         </ul>
       </div>
     );
@@ -946,16 +946,22 @@ function SearchTabContent({
       <div className="flex items-center justify-between py-2 text-(length:--text-micro) uppercase tracking-wide text-muted-foreground">
         <span>
           {allMatchTotal > totalResults
-            ? `${totalResults} of ${allMatchTotal} results`
+            ? t("search.results.countOfTotal", { defaultValue: "{{shown}} of {{total}} results", shown: totalResults, total: allMatchTotal })
             : totalResults === 1
-              ? "1 result"
-              : `${totalResults} results`}
-          {` · sorted by ${sortLabel}`}
+              ? t("search.results.countOne", { defaultValue: "1 result" })
+              : t("search.results.count", { defaultValue: "{{total}} results", total: totalResults })}
+          {t("search.results.sortedBy", { defaultValue: " · sorted by {{sort}}", sort: sortLabel })}
           {activeFilterCount > 0
-            ? ` · ${activeFilterCount} ${activeFilterCount === 1 ? "filter" : "filters"} active`
+            ? t("search.results.filtersActive", {
+                defaultValue: " · {{filterCount}} {{noun}} active",
+                filterCount: activeFilterCount,
+                noun: activeFilterCount === 1
+                  ? t("search.results.filterNoun", { defaultValue: "filter" })
+                  : t("search.results.filterNounPlural", { defaultValue: "filters" }),
+              })
             : ""}
         </span>
-        {isFetching ? <span aria-live="polite" className="normal-case tracking-normal">Updating…</span> : null}
+        {isFetching ? <span aria-live="polite" className="normal-case tracking-normal">{t("search.results.updating", { defaultValue: "Updating…" })}</span> : null}
       </div>
       <div className="flex flex-col pb-10">
         {scope === "all" ? (

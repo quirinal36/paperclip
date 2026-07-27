@@ -178,29 +178,50 @@ reportsTo: orchestrator
 1. `media_import_url` — `product_brief.images[].url`(Supabase public URL)을 넣고 `media_id`를 받는다
 2. `generate_image` — `params.medias[].value`에 **`media_id`를 넣는다.
    `https://` URL을 그대로 넣으면 실패한다**
-3. `job_status` — 완료를 기다린다. 폴링 중에 다른 컷을 먼저 제출해도 된다
-4. 필요하면 `upscale_image`(2k/4k) · `remove_background`(누끼) · `outpaint_image`(여백 확장)
+3. `job_status` — `sync: true`로 부르면 서버가 최대 25초 내부 폴링 후 종료 상태로 돌려준다.
+   이미지는 보통 10~20초라 대개 한 번에 끝난다. 안 끝나면 응답의 `poll_after_seconds`만큼 기다렸다 다시 부른다
+4. 필요하면 `upscale_image` · `remove_background`(누끼) · `outpaint_image`(여백 확장)
 
 제출 전에 `params.get_cost: true`로 크레딧을 먼저 확인한다. 잔액은 `balance`.
+응답의 `credits`는 반올림 표시값이고 **실제 차감은 `credits_exact`**다 (잔액이 소수점으로 관리된다).
+
+#### 실수하기 쉬운 파라미터
+
+| 항목 | 규칙 |
+|---|---|
+| `medias[].role` | **필수이고 모델마다 이름이 다르다.** 아래 모델 표의 `role` 열을 그대로 쓴다. 틀리면 거절된다 |
+| `params.count` | 1~4. 같은 프롬프트로 시안을 여러 장 받을 때 쓴다. 비용은 장수만큼 곱해진다 |
+| `upscale_image` | **원본 `width`/`height`를 반드시 넘긴다.** 서버가 추론하지 않는다. `resolution`은 `2k`/`4k` |
+| `remove_background` | `params.media_id` + `params.media_type: "image"`. 프롬프트를 받지 않는다 |
+| `outpaint_image` | `params.image_id` + `aspect_ratio`. 프롬프트를 받지 않는다. `4:5` 지원 |
 
 ### 모델 선택 — 컷 종류로 고른다. 취향으로 고르지 않는다
 
-| 컷 | 모델 | 설정 | 크레딧 | 고르는 이유 |
-|---|---|---|---|---|
-| **패키지가 읽히는 컷**<br>히어로 packshot, 라벨·용량 노출, 묶음 구성샷 | `nano_banana_pro` | `resolution: "4k"` | 4 | 카탈로그에서 텍스트 렌더링이 가장 정확하다. 튜브의 한글 제품명·용량 표기가 뭉개지면 그 자체가 표시 위반 리스크다 |
-| **배경 교체·구도 변형·컷 배리에이션**<br>같은 제품으로 씬만 여러 개 | `seedream_v4_5` | `quality: "basic"`(4K) 또는 `"high"`(~6K) | 1 | instruction 기반 편집이 정확하고 basic도 4K인데 1크레딧. 상세페이지는 세로로 길어 원본이 클수록 유리하다 |
-| **제형·무드·라이프스타일 컷**<br>라벨이 안 읽혀도 되는 컷 | `soul_cinematic` | `quality: "2k"` | 0.12 | 조명 연출 전용. "조용한 확신" 톤의 화이트·아이보리 + 진주빛 광에 맞다. 시안을 20장 뽑아도 부담 없다 |
+| 컷 | 모델 | `role` | 설정 | 크레딧 | 고르는 이유 |
+|---|---|---|---|---|---|
+| **패키지가 읽히는 컷**<br>히어로 packshot, 라벨·용량 노출, 묶음 구성샷 | `nano_banana_pro` | `image` | `resolution: "4k"` | 4 | 카탈로그에서 텍스트 렌더링이 가장 정확하다. 튜브의 한글 제품명·용량 표기가 뭉개지면 그 자체가 표시 위반 리스크다 |
+| **배경 교체·구도 변형·컷 배리에이션**<br>같은 제품으로 씬만 여러 개 | `seedream_v4_5` | `image_references` | `quality: "basic"`(4K) 또는 `"high"`(~6K) | 1 | instruction 기반 편집이 정확하고 basic도 4K인데 1크레딧. 상세페이지는 세로로 길어 원본이 클수록 유리하다 |
+| **제형·무드·라이프스타일 컷**<br>라벨이 안 읽혀도 되는 컷 | `soul_cinematic` | `image` (최대 1장) | `quality: "2k"` (또는 `"1.5k"`) | 0.12 | 조명 연출 전용. "조용한 확신" 톤의 화이트·아이보리 + 진주빛 광에 맞다. 시안을 20장 뽑아도 2.4크레딧이다 |
 
+- **`role`을 표 그대로 쓴다.** 모델마다 다르고 필수다. `seedream_v4_5`만 `image_references`이며
+  여기에 `image`를 넣으면 거절된다
 - **레퍼런스 없이 처음부터 만들지 않는다.** 항상 원본 사진을 `medias`에 넣는다
 - `nano_banana_pro`는 2K로 내리면 2크레딧이다. 히어로가 아니면 2K로 충분하다
-- `soul_cinematic`은 **레퍼런스 1장·2K 상한**이다. 패키지 라벨 컷에는 쓰지 않는다
-- 표에 없는 상황이면 `models_explore(action: "recommend")`로 확인하고, 고른 이유를 코멘트에 남긴다
+- `soul_cinematic`은 **레퍼런스 1장 상한**이다. 패키지 라벨 컷에는 쓰지 않는다
 
-### 쓰지 않는 모델
+### 쓰지 않는 모델 — 툴이 먼저 추천해도 무시한다
 
 `marketing_studio_image`, `ms_image` — **금지.**
 광고 문구·뱃지·할인 표기를 이미지 안에 구워 넣는다.
 그 텍스트는 `copy` 검수를 거치지 않으므로 COMPLIANCE 검토를 통째로 우회한다.
+
+> ⚠️ **함정.** `generate_image` 툴 설명은 "상업/제품/광고용 기본값은 `marketing_studio_image`"라고
+> 안내하고, `models_explore(action: "recommend")`에 제품 사진을 물으면 **`marketing_studio_image`가
+> 1순위로 올라온다**(점수 1540, `marketing-image-model-priority` 가산). 실측으로 확인한 동작이다.
+>
+> **추천 결과를 그대로 따르지 않는다.** 위 3개 모델 표가 우선한다.
+> 표로 안 풀리는 상황에서만 `models_explore`를 참고하되, 결과에 `marketing_studio_image`나
+> `ms_image`가 있으면 건너뛰고 그 다음 후보를 본다. 고른 이유는 코멘트에 남긴다.
 
 **이 회사에서 모든 텍스트는 HTML로 조판한 뒤 캡처된다.**
 결과가 이미지라고 해서 AI에게 글자를 그리게 해도 된다는 뜻이 아니다. 정반대다 —
@@ -238,16 +259,29 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
 5. **없는 구성품·인증마크·수상 마크를 만들지 않는다.** `PRODUCT.md`에 있는 구성만.
 6. 결과의 라벨이 원본과 다르면 **버린다.** 프롬프트를 고쳐 다시 뽑는다. 통과시키지 않는다.
 
-### 화면 비율 — 캔버스 1000px 기준
+### 화면 비율 — 모델마다 지원 목록이 다르다
 
-| 용도 | `aspect_ratio` | 최소 픽셀 폭 |
+> ⚠️ **`4:5`는 `nano_banana_pro`에만 있다.** `seedream_v4_5`와 `soul_cinematic`은
+> `4:5`를 지원하지 않는다 — 넣으면 거절된다. 실측으로 확인한 목록이다.
+
+| 모델 | 쓸 수 있는 세로 비율 |
+|---|---|
+| `nano_banana_pro` | `4:5` · `3:4` · `2:3` · `1:1` |
+| `seedream_v4_5` | `3:4` · `2:3` · `1:1` (**`4:5` 없음**) |
+| `soul_cinematic` | `3:4` · `2:3` · `1:1` (**`4:5` 없음**) |
+| `outpaint_image` | `4:5` 포함 전부 |
+
+| 용도 | 권장 `aspect_ratio` | 최소 픽셀 폭 |
 |---|---|---|
-| 풀블리드 사진 컷 | `4:5` 또는 `1:1` | 1000px |
-| 누끼 제품 컷 | `1:1` (배경 제거 후 PNG) | 1000px |
-| 밴드 안 부분 이미지 | `1:1` · `4:5` | 500px |
+| 풀블리드 사진 컷 | `3:4` (1000×1333) 또는 `2:3` (1000×1500) | 1000px |
+| 히어로 packshot | `4:5` (nano_banana_pro) | 1000px |
+| 누끼 제품 컷 | `1:1` → `remove_background` | 1000px |
+| 밴드 안 부분 이미지 | `1:1` · `3:4` | 500px |
 | 가로 띠 이미지 | `16:9` | 1000px |
 
 세로로 긴 캔버스이므로 **가로로 넓은 컷은 잘 안 쓴다.** 세로 비율을 기본으로 둔다.
+`3:4`·`2:3`가 `4:5`보다 세로로 길어 이 포맷에는 오히려 잘 맞는다.
+정확히 `4:5`가 필요한데 모델이 지원하지 않으면 `1:1`로 뽑고 `outpaint_image`로 늘린다.
 
 ### 산출 포맷
 
@@ -326,6 +360,9 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 - [ ] 이미지 안에 구워진 텍스트·뱃지·별점이 없는가
 - [ ] 없는 구성품·인증마크가 들어간 컷이 없는가
 - [ ] 풀블리드로 쓸 컷이 가로 1000px 이상인가
+- [ ] `medias[].role`을 모델별로 맞게 보냈는가 (`seedream_v4_5`만 `image_references`)
+- [ ] 모델이 지원하지 않는 `aspect_ratio`를 보내 실패한 건이 없는가 (`4:5`는 `nano_banana_pro`만)
+- [ ] `marketing_studio_image` / `ms_image` 결과물이 하나도 섞이지 않았는가
 - [ ] 컷 배치 순서가 §3.3 금지 조합을 만들지 않는가 (이미지도 포함해서 다시 본다)
 
 ## 완료 조건

@@ -10,6 +10,7 @@ import { timeAgo } from "@/lib/timeAgo";
 import { toolsApi } from "@/api/tools";
 import { Button } from "@/components/ui/button";
 import { MarkdownBody } from "@/components/MarkdownBody";
+import { useTranslation, t } from "@/i18n";
 
 /**
  * "Ask first" review queue (M1b float / M9 card, PAP-10859).
@@ -25,13 +26,16 @@ import { MarkdownBody } from "@/components/MarkdownBody";
 export function ReviewQueueCard({
   connectionId,
   emptyState = "hidden",
-  heading = "Waiting for your OK",
+  heading: headingProp,
 }: {
   connectionId?: string;
   emptyState?: "hidden" | "reassure";
   heading?: string;
 }) {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
+  const heading =
+    headingProp ?? t("reviewQueueCard.heading.default", { defaultValue: "Waiting for your OK" });
 
   const query = useQuery({
     queryKey: queryKeys.tools.actionRequests(selectedCompanyId ?? "__none__", "pending"),
@@ -52,7 +56,9 @@ export function ReviewQueueCard({
     if (emptyState === "hidden") return null;
     return (
       <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
-        Nothing is waiting for your OK right now.
+        {t("reviewQueueCard.empty.reassure", {
+          defaultValue: "Nothing is waiting for your OK right now.",
+        })}
       </div>
     );
   }
@@ -76,6 +82,7 @@ export function ReviewQueueCard({
 }
 
 function ReviewRow({ companyId, item }: { companyId: string; item: ToolActionRequestListItem }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { pushToast } = useToast();
   const [resolving, setResolving] = useState<null | "allow" | "always" | "decline">(null);
@@ -89,7 +96,14 @@ function ReviewRow({ companyId, item }: { companyId: string; item: ToolActionReq
     mutationFn: () => toolsApi.approveActionRequest(companyId, item.request.id),
     onMutate: () => setResolving("allow"),
     onSuccess: () => {
-      pushToast({ title: "Allowed once", body: `${actionLabel(item)} can run this time.`, tone: "success" });
+      pushToast({
+        title: t("reviewQueueCard.toast.allowedOnce.title", { defaultValue: "Allowed once" }),
+        body: t("reviewQueueCard.toast.allowedOnce.body", {
+          defaultValue: "{{action}} can run this time.",
+          action: actionLabel(item),
+        }),
+        tone: "success",
+      });
       invalidate();
     },
     onError: (error) => {
@@ -108,8 +122,11 @@ function ReviewRow({ companyId, item }: { companyId: string; item: ToolActionReq
     onMutate: () => setResolving("always"),
     onSuccess: () => {
       pushToast({
-        title: "Always allowed",
-        body: `${actionLabel(item)} won’t ask again.`,
+        title: t("reviewQueueCard.toast.alwaysAllowed.title", { defaultValue: "Always allowed" }),
+        body: t("reviewQueueCard.toast.alwaysAllowed.body", {
+          defaultValue: "{{action}} won’t ask again.",
+          action: actionLabel(item),
+        }),
         tone: "success",
       });
       invalidate();
@@ -126,7 +143,14 @@ function ReviewRow({ companyId, item }: { companyId: string; item: ToolActionReq
     mutationFn: () => toolsApi.declineActionRequest(companyId, item.request.id),
     onMutate: () => setResolving("decline"),
     onSuccess: () => {
-      pushToast({ title: "Declined", body: `${actionLabel(item)} won’t run.`, tone: "info" });
+      pushToast({
+        title: t("reviewQueueCard.toast.declined.title", { defaultValue: "Declined" }),
+        body: t("reviewQueueCard.toast.declined.body", {
+          defaultValue: "{{action}} won’t run.",
+          action: actionLabel(item),
+        }),
+        tone: "info",
+      });
       invalidate();
     },
     onError: (error) => {
@@ -145,10 +169,18 @@ function ReviewRow({ companyId, item }: { companyId: string; item: ToolActionReq
         <span className="font-bold text-foreground">{actionLabel(item)}</span>
         {item.applicationName && (
           <span className="text-muted-foreground">
-            in {humanizeConnectionDisplayName(item.applicationName)}
+            {t("reviewQueueCard.inApplication", {
+              defaultValue: "in {{application}}",
+              application: humanizeConnectionDisplayName(item.applicationName),
+            })}
           </span>
         )}
-        <span className="text-xs text-muted-foreground">· asked {timeAgo(item.request.createdAt)}</span>
+        <span className="text-xs text-muted-foreground">
+          {t("reviewQueueCard.askedAgo", {
+            defaultValue: "· asked {{time}}",
+            time: timeAgo(item.request.createdAt),
+          })}
+        </span>
       </div>
 
       {preview ? (
@@ -157,22 +189,25 @@ function ReviewRow({ companyId, item }: { companyId: string; item: ToolActionReq
         </div>
       ) : (
         <p className="mt-1 text-sm text-muted-foreground">
-          An agent wants to run this action. It can change something, so we’re checking with you first.
+          {t("reviewQueueCard.fallbackDescription", {
+            defaultValue:
+              "An agent wants to run this action. It can change something, so we’re checking with you first.",
+          })}
         </p>
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={() => allowOnce.mutate()} disabled={busy}>
           {resolving === "allow" ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1.5 h-3.5 w-3.5" />}
-          Allow once
+          {t("reviewQueueCard.actions.allowOnce", { defaultValue: "Allow once" })}
         </Button>
         <Button size="sm" variant="outline" onClick={() => alwaysAllow.mutate()} disabled={busy}>
           {resolving === "always" ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-          Always allow
+          {t("reviewQueueCard.actions.alwaysAllow", { defaultValue: "Always allow" })}
         </Button>
         <Button size="sm" variant="ghost" onClick={() => decline.mutate()} disabled={busy}>
           {resolving === "decline" ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <X className="mr-1.5 h-3.5 w-3.5" />}
-          Decline
+          {t("reviewQueueCard.actions.decline", { defaultValue: "Decline" })}
         </Button>
       </div>
     </div>
@@ -180,7 +215,8 @@ function ReviewRow({ companyId, item }: { companyId: string; item: ToolActionReq
 }
 
 function actionLabel(item: ToolActionRequestListItem): string {
-  if (!item.toolTitle && !item.toolName) return "This action";
+  if (!item.toolTitle && !item.toolName)
+    return t("reviewQueueCard.defaultActionLabel", { defaultValue: "This action" });
   return humanizeConnectionDisplayName(item.toolName ?? "", { title: item.toolTitle });
 }
 
@@ -189,8 +225,11 @@ function failToast(
   error: unknown,
 ) {
   pushToast({
-    title: "Couldn’t save that",
-    body: error instanceof Error ? error.message : "Please try again.",
+    title: t("reviewQueueCard.toast.saveFailed.title", { defaultValue: "Couldn’t save that" }),
+    body:
+      error instanceof Error
+        ? error.message
+        : t("reviewQueueCard.toast.saveFailed.body", { defaultValue: "Please try again." }),
     tone: "error",
   });
 }

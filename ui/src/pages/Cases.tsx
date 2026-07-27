@@ -291,7 +291,7 @@ function CaseTrailingColumns({
             <CaseCopyableToken
               key={column}
               value={row.identifier}
-              label="case ID"
+              label={t("cases.copyable.caseId", { defaultValue: "case ID" })}
               className="font-mono text-xs text-muted-foreground"
               containerClassName="shrink-0"
               stopPropagation
@@ -303,7 +303,7 @@ function CaseTrailingColumns({
             <CaseCopyableToken
               key={column}
               value={row.key}
-              label="case key"
+              label={t("cases.copyable.caseKey", { defaultValue: "case key" })}
               className="font-mono text-xs text-muted-foreground"
               stopPropagation
             />
@@ -418,6 +418,7 @@ function CaseListRow({
   selected?: boolean;
   onSelect?: () => void;
 }) {
+  const { t } = useTranslation();
   const caseHref = useCaseHref();
   return (
     <Link
@@ -444,7 +445,7 @@ function CaseListRow({
           {visibleColumnSet.has("id") ? (
             <CaseCopyableToken
               value={row.identifier}
-              label="case ID"
+              label={t("cases.copyable.caseId", { defaultValue: "case ID" })}
               className="font-mono text-xs text-muted-foreground"
               containerClassName="shrink-0"
               stopPropagation
@@ -453,7 +454,7 @@ function CaseListRow({
           {visibleColumnSet.has("key") && row.key ? (
             <CaseCopyableToken
               value={row.key}
-              label="case key"
+              label={t("cases.copyable.caseKey", { defaultValue: "case key" })}
               className="shrink-0 font-mono text-xs text-muted-foreground"
               stopPropagation
             />

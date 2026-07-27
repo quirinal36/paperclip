@@ -11,17 +11,23 @@ import { MarkdownBody } from "@/components/MarkdownBody";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn, relativeTime } from "@/lib/utils";
 import { Diff } from "lucide-react";
+import { useTranslation, t } from "@/i18n";
 
 /** Author + via-issue attribution line for a revision. */
 function RevisionByline({ revision }: { revision: CaseDocumentRevision }) {
-  const author = revision.actorAgentName ?? (revision.createdByUserId ? "User" : "System");
+  const { t } = useTranslation();
+  const author =
+    revision.actorAgentName ??
+    (revision.createdByUserId
+      ? t("caseRevisionRail.byline.userAuthor", { defaultValue: "User" })
+      : t("caseRevisionRail.byline.systemAuthor", { defaultValue: "System" }));
   return (
     <span className="flex flex-wrap items-center gap-x-1 text-(length:--text-micro) text-muted-foreground">
       <span>{author}</span>
       {revision.issue && (
         <>
           <span aria-hidden>·</span>
-          <span>via</span>
+          <span>{t("caseRevisionRail.byline.via", { defaultValue: "via" })}</span>
           <Link
             to={`/issues/${revision.issue.identifier}`}
             className="font-mono text-foreground/80 hover:underline"
@@ -37,8 +43,17 @@ function RevisionByline({ revision }: { revision: CaseDocumentRevision }) {
 }
 
 function getRevisionLabel(revision: CaseDocumentRevision) {
-  const actor = revision.actorAgentName ?? (revision.createdByUserId ? "board" : "system");
-  return `rev ${revision.revisionNumber} - ${relativeTime(revision.createdAt)} - ${actor}`;
+  const actor =
+    revision.actorAgentName ??
+    (revision.createdByUserId
+      ? t("caseRevisionRail.revisionLabel.actorBoard", { defaultValue: "board" })
+      : t("caseRevisionRail.revisionLabel.actorSystem", { defaultValue: "system" }));
+  return t("caseRevisionRail.revisionLabel.full", {
+    defaultValue: "rev {{number}} - {{time}} - {{actor}}",
+    number: revision.revisionNumber,
+    time: relativeTime(revision.createdAt),
+    actor,
+  });
 }
 
 function CaseDocumentDiffModal({
@@ -54,6 +69,7 @@ function CaseDocumentDiffModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const [leftRevisionId, setLeftRevisionId] = useState<string | null>(null);
   const [rightRevisionId, setRightRevisionId] = useState<string | null>(null);
 
@@ -83,15 +99,15 @@ function CaseDocumentDiffModal({
         <div className="flex items-center justify-between gap-4">
           <DialogHeader className="shrink-0">
             <DialogTitle>
-              Diff - <span className="font-mono text-sm">{documentKey}</span>
+              {t("caseRevisionRail.diffModal.title", { defaultValue: "Diff - " })}<span className="font-mono text-sm">{documentKey}</span>
             </DialogTitle>
           </DialogHeader>
           <div className="flex shrink-0 items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-(length:--text-nano) font-medium uppercase tracking-(--tracking-caps) text-red-400">Old</span>
+              <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-(length:--text-nano) font-medium uppercase tracking-(--tracking-caps) text-red-400">{t("caseRevisionRail.diffModal.old", { defaultValue: "Old" })}</span>
               <Select value={effectiveLeftId ?? ""} onValueChange={setLeftRevisionId}>
                 <SelectTrigger className="h-7 w-60 border-border/60 text-xs">
-                  <SelectValue placeholder="Select revision" />
+                  <SelectValue placeholder={t("caseRevisionRail.diffModal.selectRevisionPlaceholder", { defaultValue: "Select revision" })} />
                 </SelectTrigger>
                 <SelectContent>
                   {revisions.map((revision) => (
@@ -103,10 +119,10 @@ function CaseDocumentDiffModal({
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-(length:--text-nano) font-medium uppercase tracking-(--tracking-caps) text-green-400">New</span>
+              <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-(length:--text-nano) font-medium uppercase tracking-(--tracking-caps) text-green-400">{t("caseRevisionRail.diffModal.new", { defaultValue: "New" })}</span>
               <Select value={effectiveRightId ?? ""} onValueChange={setRightRevisionId}>
                 <SelectTrigger className="h-7 w-60 border-border/60 text-xs">
-                  <SelectValue placeholder="Select revision" />
+                  <SelectValue placeholder={t("caseRevisionRail.diffModal.selectRevisionPlaceholder", { defaultValue: "Select revision" })} />
                 </SelectTrigger>
                 <SelectContent>
                   {revisions.map((revision) => (
@@ -122,16 +138,16 @@ function CaseDocumentDiffModal({
 
         <div className="flex-1 overflow-auto rounded-md border border-border text-xs">
           {!leftRevision || !rightRevision ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">Select two revisions to compare.</div>
+            <div className="p-6 text-center text-sm text-muted-foreground">{t("caseRevisionRail.diffModal.selectTwoRevisions", { defaultValue: "Select two revisions to compare." })}</div>
           ) : leftRevision.id === rightRevision.id ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">Both sides are the same revision.</div>
+            <div className="p-6 text-center text-sm text-muted-foreground">{t("caseRevisionRail.diffModal.sameRevision", { defaultValue: "Both sides are the same revision." })}</div>
           ) : (
             <div className="font-mono text-xs leading-6">
               <div className="grid grid-cols-(--gtc-1) border-b border-border/60 bg-muted/30 px-3 py-2 text-(length:--text-micro) uppercase tracking-(--tracking-caps) text-muted-foreground">
-                <span>Old</span>
-                <span>New</span>
+                <span>{t("caseRevisionRail.diffModal.old", { defaultValue: "Old" })}</span>
+                <span>{t("caseRevisionRail.diffModal.new", { defaultValue: "New" })}</span>
                 <span />
-                <span>Content</span>
+                <span>{t("caseRevisionRail.diffModal.content", { defaultValue: "Content" })}</span>
               </div>
               {diffRows.map((row, index) => (
                 <div
@@ -172,6 +188,7 @@ export function CaseRevisionRail({
   caseIdentifier: string;
   documentKey?: string;
 }) {
+  const { t } = useTranslation();
   const revisionsQuery = useQuery({
     queryKey: queryKeys.cases.revisions(caseIdentifier, documentKey),
     queryFn: () => casesApi.listRevisions(caseIdentifier, documentKey),
@@ -190,13 +207,13 @@ export function CaseRevisionRail({
   }, [revisions, selectedId]);
 
   if (revisionsQuery.isLoading) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Loading revisions…</p>;
+    return <p className="py-6 text-center text-sm text-muted-foreground">{t("caseRevisionRail.loading", { defaultValue: "Loading revisions…" })}</p>;
   }
   if (revisionsQuery.isError) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Could not load revisions.</p>;
+    return <p className="py-6 text-center text-sm text-muted-foreground">{t("caseRevisionRail.error", { defaultValue: "Could not load revisions." })}</p>;
   }
   if (revisions.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">No revisions yet.</p>;
+    return <p className="py-6 text-center text-sm text-muted-foreground">{t("caseRevisionRail.empty", { defaultValue: "No revisions yet." })}</p>;
   }
 
   const selected = revisions.find((r) => r.id === selectedId) ?? revisions[0]!;
@@ -207,7 +224,7 @@ export function CaseRevisionRail({
       <aside className="space-y-1">
         <div className="flex items-center justify-between gap-2 px-1">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Revisions
+            {t("caseRevisionRail.heading", { defaultValue: "Revisions" })}
           </h3>
           {revisions.length > 1 ? (
             <Button
@@ -218,7 +235,7 @@ export function CaseRevisionRail({
               onClick={() => setDiffOpen(true)}
             >
               <Diff className="h-3.5 w-3.5" />
-              Diff
+              {t("caseRevisionRail.diffAction", { defaultValue: "Diff" })}
             </Button>
           ) : null}
         </div>
@@ -238,10 +255,10 @@ export function CaseRevisionRail({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium">
-                    rev {rev.revisionNumber}
+                    {t("caseRevisionRail.revisionShort", { defaultValue: "rev {{number}}", number: rev.revisionNumber })}
                     {index === 0 && (
                       <span className="ml-1.5 rounded bg-muted px-1 py-0.5 text-(length:--text-nano) text-muted-foreground">
-                        latest
+                        {t("caseRevisionRail.latestBadge", { defaultValue: "latest" })}
                       </span>
                     )}
                   </span>
@@ -261,7 +278,7 @@ export function CaseRevisionRail({
 
       <Card className="min-w-0 px-4 py-3">
         <div className="mb-2 flex items-baseline justify-between border-b border-border pb-2">
-          <span className="text-sm font-medium">rev {selected.revisionNumber}</span>
+          <span className="text-sm font-medium">{t("caseRevisionRail.revisionShort", { defaultValue: "rev {{number}}", number: selected.revisionNumber })}</span>
           <RevisionByline revision={selected} />
         </div>
         {selected.body ? (
@@ -269,7 +286,7 @@ export function CaseRevisionRail({
             {selected.body}
           </MarkdownBody>
         ) : (
-          <p className="text-sm text-muted-foreground">This revision has no body.</p>
+          <p className="text-sm text-muted-foreground">{t("caseRevisionRail.emptyBody", { defaultValue: "This revision has no body." })}</p>
         )}
       </Card>
       {revisions.length > 1 ? (

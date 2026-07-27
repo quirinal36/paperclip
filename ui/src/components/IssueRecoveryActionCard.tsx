@@ -19,6 +19,7 @@ import {
   TriangleAlert,
   Wrench,
 } from "lucide-react";
+import { t, useTranslation } from "@/i18n";
 import { Link } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -397,6 +398,7 @@ function BranchFacet({
   sha: string | null;
 }) {
   const shortSha = formatShortSha(sha);
+  const { t } = useTranslation();
   return (
     <div className="min-w-0 rounded-md border border-border/70 bg-background/60 px-2.5 py-2">
       <div className="text-(length:--text-nano) font-medium uppercase tracking-(--tracking-label) text-muted-foreground">
@@ -407,7 +409,9 @@ function BranchFacet({
         {branch ? (
           <code className="truncate font-mono text-xs text-foreground/90">{branch}</code>
         ) : (
-          <span className="text-xs italic text-muted-foreground">detached / unknown</span>
+          <span className="text-xs italic text-muted-foreground">
+            {t("issueRecoveryActionCard.branchFacet.detachedUnknown", { defaultValue: "detached / unknown" })}
+          </span>
         )}
       </div>
       <div className="mt-0.5 pl-5 font-mono text-(length:--text-micro) text-muted-foreground">
@@ -425,6 +429,7 @@ function DivergenceDiagnosis({
   dividerClass: string;
 }) {
   const badge = ANCESTRY_BADGE[divergence.ancestryVerdict ?? "unknown"];
+  const { t } = useTranslation();
   return (
     <div
       data-testid="recovery-divergence-diagnosis"
@@ -435,7 +440,7 @@ function DivergenceDiagnosis({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-(length:--text-micro) font-semibold uppercase tracking-(--tracking-eyebrow) text-muted-foreground">
-          Divergence diagnosis
+          {t("issueRecoveryActionCard.divergence.diagnosis", { defaultValue: "Divergence diagnosis" })}
         </span>
         <Badge variant="outline"
           data-testid="recovery-ancestry-verdict"
@@ -444,17 +449,19 @@ function DivergenceDiagnosis({
             badge.className,
           )}
         >
-          {badge.label}
+          {t(`issueRecoveryActionCard.ancestry.${divergence.ancestryVerdict ?? "unknown"}`, {
+            defaultValue: badge.label,
+          })}
         </Badge>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <BranchFacet
-          label="Expected · recorded"
+          label={t("issueRecoveryActionCard.divergence.expectedRecorded", { defaultValue: "Expected · recorded" })}
           branch={divergence.expectedBranch}
           sha={divergence.expectedHeadSha}
         />
         <BranchFacet
-          label="Live · checked out"
+          label={t("issueRecoveryActionCard.divergence.liveCheckedOut", { defaultValue: "Live · checked out" })}
           branch={divergence.liveBranch}
           sha={divergence.liveHeadSha}
         />
@@ -469,10 +476,14 @@ function DivergenceDiagnosis({
         >
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>
-            Worktree claimed by{" "}
+            {t("issueRecoveryActionCard.contention.claimedBy", { defaultValue: "Worktree claimed by" })}{" "}
             <code className="font-mono text-foreground/90">{contentionLabel(divergence.contention)}</code>{" "}
-            {divergence.contention.hasActiveRun ? "(active run)" : "(claim held)"} — the lossless repair
-            can&apos;t run while another workspace holds the live branch.
+            {divergence.contention.hasActiveRun
+              ? t("issueRecoveryActionCard.contention.activeRun", { defaultValue: "(active run)" })
+              : t("issueRecoveryActionCard.contention.claimHeld", { defaultValue: "(claim held)" })}{" "}
+            {t("issueRecoveryActionCard.contention.reason", {
+              defaultValue: "— the lossless repair can't run while another workspace holds the live branch.",
+            })}
           </span>
         </p>
       ) : null}
@@ -483,7 +494,12 @@ function DivergenceDiagnosis({
 function contentionLabel(contention: WorkspaceContention): string {
   return (
     contention.claimedByIssueIdentifier ??
-    (contention.claimedByIssueId ? `issue ${contention.claimedByIssueId.slice(0, 8)}` : "another task")
+    (contention.claimedByIssueId
+      ? t("issueRecoveryActionCard.contention.issueFallback", {
+          defaultValue: "issue {{id}}",
+          id: contention.claimedByIssueId.slice(0, 8),
+        })
+      : t("issueRecoveryActionCard.contention.anotherTask", { defaultValue: "another task" }))
   );
 }
 
@@ -509,6 +525,7 @@ function BreakGlassOverride({
   const verdictBadge = ANCESTRY_BADGE[divergence.ancestryVerdict ?? "unknown"];
   const expectedSha = formatShortSha(divergence.expectedHeadSha);
   const liveSha = formatShortSha(divergence.liveHeadSha);
+  const { t } = useTranslation();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -521,7 +538,9 @@ function BreakGlassOverride({
           className="border-red-400/60 text-red-700 hover:bg-red-500/10 dark:border-red-500/40 dark:text-red-300"
         >
           <OctagonAlert className="h-3.5 w-3.5" aria-hidden />
-          I&apos;ve verified this — reconcile anyway
+          {t("issueRecoveryActionCard.breakGlass.verifiedTrigger", {
+            defaultValue: "I've verified this — reconcile anyway",
+          })}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -536,13 +555,19 @@ function BreakGlassOverride({
             className="flex items-center gap-1.5 text-(length:--text-micro) font-semibold uppercase tracking-(--tracking-eyebrow) text-red-700 dark:text-red-300"
           >
             <OctagonAlert className="h-3.5 w-3.5" aria-hidden />
-            Break-glass reconciliation
+            {t("issueRecoveryActionCard.breakGlass.title", { defaultValue: "Break-glass reconciliation" })}
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            This overrides Paperclip&apos;s safety check and points the recorded workspace at the live
-            branch{" "}
-            <span className="font-medium text-foreground/80">without an ancestry proof</span>. Confirm
-            the divergence below and record why before continuing.
+            {t("issueRecoveryActionCard.breakGlass.bodyBefore", {
+              defaultValue:
+                "This overrides Paperclip's safety check and points the recorded workspace at the live branch",
+            })}{" "}
+            <span className="font-medium text-foreground/80">
+              {t("issueRecoveryActionCard.breakGlass.bodyEmphasis", { defaultValue: "without an ancestry proof" })}
+            </span>
+            {t("issueRecoveryActionCard.breakGlass.bodyAfter", {
+              defaultValue: ". Confirm the divergence below and record why before continuing.",
+            })}
           </p>
         </div>
         <dl
@@ -550,33 +575,53 @@ function BreakGlassOverride({
           className="space-y-1.5 rounded-md border border-red-400/40 bg-red-500/5 px-2.5 py-2 text-(length:--text-micro)"
         >
           <div className="flex items-center justify-between gap-2">
-            <dt className="shrink-0 text-muted-foreground">Recorded · expected</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t("issueRecoveryActionCard.breakGlass.recordedExpected", { defaultValue: "Recorded · expected" })}
+            </dt>
             <dd className="min-w-0 truncate font-mono text-foreground/90">
-              {divergence.expectedBranch ?? "detached"}
+              {divergence.expectedBranch ??
+                t("issueRecoveryActionCard.branch.detached", { defaultValue: "detached" })}
               {expectedSha ? ` @ ${expectedSha}` : ""}
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="shrink-0 text-muted-foreground">Live · checked out</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t("issueRecoveryActionCard.breakGlass.liveCheckedOut", { defaultValue: "Live · checked out" })}
+            </dt>
             <dd className="min-w-0 truncate font-mono text-foreground/90">
-              {divergence.liveBranch ?? "detached"}
+              {divergence.liveBranch ??
+                t("issueRecoveryActionCard.branch.detached", { defaultValue: "detached" })}
               {liveSha ? ` @ ${liveSha}` : ""}
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="shrink-0 text-muted-foreground">Ancestry verdict</dt>
-            <dd className="font-medium">{verdictBadge.label}</dd>
+            <dt className="shrink-0 text-muted-foreground">
+              {t("issueRecoveryActionCard.breakGlass.ancestryVerdict", { defaultValue: "Ancestry verdict" })}
+            </dt>
+            <dd className="font-medium">
+              {t(`issueRecoveryActionCard.ancestry.${divergence.ancestryVerdict ?? "unknown"}`, {
+                defaultValue: verdictBadge.label,
+              })}
+            </dd>
           </div>
         </dl>
         <div className="space-y-1">
           <Label htmlFor="recovery-breakglass-reason" className="text-(length:--text-micro) text-muted-foreground">
-            Reason <span className="text-red-600 dark:text-red-400">(required — recorded in the audit log)</span>
+            {t("issueRecoveryActionCard.breakGlass.reasonLabel", { defaultValue: "Reason" })}{" "}
+            <span className="text-red-600 dark:text-red-400">
+              {t("issueRecoveryActionCard.breakGlass.reasonRequiredNote", {
+                defaultValue: "(required — recorded in the audit log)",
+              })}
+            </span>
           </Label>
           <Textarea
             id="recovery-breakglass-reason"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
-            placeholder="e.g. Verified the live branch carries only the intended follow-up commits; safe to adopt."
+            placeholder={t("issueRecoveryActionCard.breakGlass.reasonPlaceholder", {
+              defaultValue:
+                "e.g. Verified the live branch carries only the intended follow-up commits; safe to adopt.",
+            })}
             className="min-h-20 text-xs"
             data-testid="recovery-breakglass-reason"
             aria-required="true"
@@ -594,7 +639,11 @@ function BreakGlassOverride({
             onConfirm(trimmedReason);
           }}
         >
-          {pending ? "Reconciling…" : "Reconcile anyway (break-glass)"}
+          {pending
+            ? t("issueRecoveryActionCard.breakGlass.reconciling", { defaultValue: "Reconciling…" })
+            : t("issueRecoveryActionCard.breakGlass.confirm", {
+                defaultValue: "Reconcile anyway (break-glass)",
+              })}
         </Button>
       </PopoverContent>
     </Popover>
@@ -622,11 +671,20 @@ function RepairWorkspace({
   disabled: boolean;
   disabledReason: string | null;
 }) {
+  const { t } = useTranslation();
   const dirtyCount = divergence.dirtyFileCount;
   const dirtyLabel =
     dirtyCount === null
-      ? "Uncommitted changes"
-      : `${dirtyCount} uncommitted ${dirtyCount === 1 ? "change" : "changes"}`;
+      ? t("issueRecoveryActionCard.repair.uncommittedChanges", { defaultValue: "Uncommitted changes" })
+      : dirtyCount === 1
+        ? t("issueRecoveryActionCard.repair.dirtyCountOne", {
+            defaultValue: "{{n}} uncommitted change",
+            n: dirtyCount,
+          })
+        : t("issueRecoveryActionCard.repair.dirtyCountOther", {
+            defaultValue: "{{n}} uncommitted changes",
+            n: dirtyCount,
+          });
   const trigger = (
     <Button
       type="button"
@@ -641,7 +699,9 @@ function RepairWorkspace({
       ) : (
         <Wrench className="h-3.5 w-3.5" aria-hidden />
       )}
-      Repair workspace — quarantine changes &amp; restore branch
+      {t("issueRecoveryActionCard.repair.trigger", {
+        defaultValue: "Repair workspace — quarantine changes & restore branch",
+      })}
     </Button>
   );
   if (disabled) {
@@ -673,12 +733,13 @@ function RepairWorkspace({
             className="flex items-center gap-1.5 text-(length:--text-micro) font-semibold uppercase tracking-(--tracking-eyebrow) text-sky-700 dark:text-sky-300"
           >
             <Wrench className="h-3.5 w-3.5" aria-hidden />
-            Repair workspace
+            {t("issueRecoveryActionCard.repair.title", { defaultValue: "Repair workspace" })}
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            This is lossless — no reason required. Your uncommitted changes are committed onto a fresh
-            rescue branch, then the recorded branch is restored so the task can resume. The live branch
-            is left exactly as it is.
+            {t("issueRecoveryActionCard.repair.body", {
+              defaultValue:
+                "This is lossless — no reason required. Your uncommitted changes are committed onto a fresh rescue branch, then the recorded branch is restored so the task can resume. The live branch is left exactly as it is.",
+            })}
           </p>
         </div>
         <dl
@@ -686,20 +747,29 @@ function RepairWorkspace({
           className="space-y-1.5 rounded-md border border-sky-400/30 bg-sky-500/5 px-2.5 py-2 text-(length:--text-micro)"
         >
           <div className="flex items-center justify-between gap-2">
-            <dt className="shrink-0 text-muted-foreground">Dirty changes</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t("issueRecoveryActionCard.repair.dirtyChanges", { defaultValue: "Dirty changes" })}
+            </dt>
             <dd data-testid="recovery-repair-dirty-count" className="font-medium text-foreground/90">
               {dirtyLabel}
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="shrink-0 text-muted-foreground">Live branch</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t("issueRecoveryActionCard.repair.liveBranch", { defaultValue: "Live branch" })}
+            </dt>
             <dd className="min-w-0 truncate font-mono text-foreground/90">
-              {divergence.liveBranch ?? "detached"}
-              <span className="ml-1 font-sans text-muted-foreground">(left untouched)</span>
+              {divergence.liveBranch ??
+                t("issueRecoveryActionCard.branch.detached", { defaultValue: "detached" })}
+              <span className="ml-1 font-sans text-muted-foreground">
+                {t("issueRecoveryActionCard.repair.leftUntouched", { defaultValue: "(left untouched)" })}
+              </span>
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="shrink-0 text-muted-foreground">Rescue branch</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t("issueRecoveryActionCard.repair.rescueBranch", { defaultValue: "Rescue branch" })}
+            </dt>
             <dd
               data-testid="recovery-repair-rescue-branch"
               className="min-w-0 truncate font-mono text-foreground/90"
@@ -709,9 +779,12 @@ function RepairWorkspace({
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="shrink-0 text-muted-foreground">Restore to</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t("issueRecoveryActionCard.repair.restoreTo", { defaultValue: "Restore to" })}
+            </dt>
             <dd className="min-w-0 truncate font-mono text-foreground/90">
-              {divergence.expectedBranch ?? "recorded branch"}
+              {divergence.expectedBranch ??
+                t("issueRecoveryActionCard.repair.recordedBranch", { defaultValue: "recorded branch" })}
             </dd>
           </div>
         </dl>
@@ -726,7 +799,11 @@ function RepairWorkspace({
             onConfirm();
           }}
         >
-          {pending ? "Repairing…" : "Quarantine changes & restore branch"}
+          {pending
+            ? t("issueRecoveryActionCard.repair.repairing", { defaultValue: "Repairing…" })
+            : t("issueRecoveryActionCard.repair.confirm", {
+                defaultValue: "Quarantine changes & restore branch",
+              })}
         </Button>
       </PopoverContent>
     </Popover>
@@ -738,13 +815,26 @@ function readWakePolicySummary(action: IssueRecoveryAction): string | null {
   if (!policy) return null;
   const type = readEvidenceString(policy.type);
   if (!type) return null;
-  if (type === "wake_owner") return "An agent will be asked to choose the next step";
-  if (type === "board_escalation") return "Board will decide";
-  if (type === "manual") return "Manual follow-up needed";
-  if (type === "manual_repair_required") return "Repair needed before retry";
+  if (type === "wake_owner")
+    return t("issueRecoveryActionCard.wakePolicy.wakeOwner", {
+      defaultValue: "An agent will be asked to choose the next step",
+    });
+  if (type === "board_escalation")
+    return t("issueRecoveryActionCard.wakePolicy.boardEscalation", { defaultValue: "Board will decide" });
+  if (type === "manual")
+    return t("issueRecoveryActionCard.wakePolicy.manual", { defaultValue: "Manual follow-up needed" });
+  if (type === "manual_repair_required")
+    return t("issueRecoveryActionCard.wakePolicy.manualRepairRequired", {
+      defaultValue: "Repair needed before retry",
+    });
   if (type === "monitor") {
     const interval = readEvidenceString(policy.intervalLabel);
-    return interval ? `Check scheduled · ${interval}` : "Check scheduled";
+    return interval
+      ? t("issueRecoveryActionCard.wakePolicy.checkScheduledInterval", {
+          defaultValue: "Check scheduled · {{interval}}",
+          interval,
+        })
+      : t("issueRecoveryActionCard.wakePolicy.checkScheduled", { defaultValue: "Check scheduled" });
   }
   return type.replaceAll("_", " ");
 }
@@ -758,7 +848,9 @@ function formatTimeShort(value: string | Date | null | undefined): string | null
     const diffMs = date.getTime() - now;
     const absMin = Math.round(Math.abs(diffMs) / 60_000);
     if (absMin < 60) {
-      return diffMs >= 0 ? `in ${absMin}m` : `${absMin}m ago`;
+      return diffMs >= 0
+        ? t("issueRecoveryActionCard.time.inMinutes", { defaultValue: "in {{minutes}}m", minutes: absMin })
+        : t("issueRecoveryActionCard.time.minutesAgo", { defaultValue: "{{minutes}}m ago", minutes: absMin });
     }
     return date.toLocaleString(undefined, {
       month: "short",
@@ -807,11 +899,14 @@ function AgentLink({
   agentMap?: ReadonlyMap<string, Agent>;
   fallback?: string | null;
 }) {
+  const { t } = useTranslation();
   if (!agentId) {
     return fallback ? <span>{fallback}</span> : <MissingValue />;
   }
   const agent = agentMap?.get(agentId);
-  const label = agent?.name ?? `agent ${agentId.slice(0, 8)}`;
+  const label =
+    agent?.name ??
+    t("issueRecoveryActionCard.agentFallback", { defaultValue: "agent {{id}}", id: agentId.slice(0, 8) });
   if (agent) {
     return (
       <Link
@@ -834,12 +929,13 @@ function RunChip({
   agentId: string | null | undefined;
   status?: string | null;
 }) {
+  const { t } = useTranslation();
   if (!runId) return <MissingValue />;
   const short = shortenRunId(runId);
   const inner = (
     <>
       <code className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-(length:--text-micro) text-foreground/80">
-        run {short}
+        {t("issueRecoveryActionCard.runChip.run", { defaultValue: "run {{id}}", id: short })}
       </code>
       {status ? (
         <span className="font-sans text-(length:--text-micro) text-muted-foreground">{status}</span>
@@ -914,6 +1010,7 @@ export function IssueRecoveryActionCard({
   variant = "full",
   className,
 }: IssueRecoveryActionCardProps) {
+  const { t } = useTranslation();
   const cardState: RecoveryCardCardState = forcedState ?? deriveRecoveryCardState(action);
   const tone = STATE_TONE[cardState];
   const ToneIcon = tone.Icon;
@@ -921,10 +1018,18 @@ export function IssueRecoveryActionCard({
 
   const headline = useMemo(() => {
     if (cardState === "resolved" && action.outcome) {
-      return `Recovery resolved as ${OUTCOME_LABEL[action.outcome] ?? action.outcome}.`;
+      const outcomeLabel = t(`issueRecoveryActionCard.outcome.${action.outcome}`, {
+        defaultValue: OUTCOME_LABEL[action.outcome] ?? action.outcome,
+      });
+      return t("issueRecoveryActionCard.headline.resolvedAs", {
+        defaultValue: "Recovery resolved as {{outcome}}.",
+        outcome: outcomeLabel,
+      });
     }
-    return KIND_HEADLINE[action.kind] ?? KIND_HEADLINE.missing_disposition;
-  }, [action.kind, action.outcome, cardState]);
+    return t(`issueRecoveryActionCard.kind.${action.kind}.headline`, {
+      defaultValue: KIND_HEADLINE[action.kind] ?? KIND_HEADLINE.missing_disposition,
+    });
+  }, [action.kind, action.outcome, cardState, t]);
 
   const wakeSummary = readWakePolicySummary(action);
   const evidenceSummary = pickEvidenceSummary(action);
@@ -943,13 +1048,16 @@ export function IssueRecoveryActionCard({
   })();
   const updatedAtLabel = formatTimeShort(action.updatedAt);
 
-  const ariaState = ({
+  const ariaStateDefaults = {
     needed: "needed",
     in_progress: "in progress",
     observe_only: "observing active run",
     escalated: "escalated",
     resolved: "resolved",
-  } satisfies Record<RecoveryCardCardState, string>)[cardState];
+  } satisfies Record<RecoveryCardCardState, string>;
+  const ariaState = t(`issueRecoveryActionCard.ariaState.${cardState}`, {
+    defaultValue: ariaStateDefaults[cardState],
+  });
 
   const showResolveActions = onResolve !== undefined && cardState !== "resolved";
   const visibleResolveOptions = RESOLVE_OPTIONS.filter((option) => {
@@ -989,7 +1097,10 @@ export function IssueRecoveryActionCard({
     divergence !== null &&
     divergence.cleanliness === "dirty";
   const repairDisabledReason = repairContention
-    ? `Held by ${contentionLabel(repairContention)} — re-issue on an isolated workspace instead.`
+    ? t("issueRecoveryActionCard.repair.heldBy", {
+        defaultValue: "Held by {{owner}} — re-issue on an isolated workspace instead.",
+        owner: contentionLabel(repairContention),
+      })
     : null;
   // When contended, the re-issue is the recommended path, so it takes the primary emphasis and a
   // "Recommended" hint while the repair button is disabled.
@@ -1004,7 +1115,10 @@ export function IssueRecoveryActionCard({
   return (
     <section
       role="status"
-      aria-label={`Recovery action: ${ariaState}`}
+      aria-label={t("issueRecoveryActionCard.ariaLabel", {
+        defaultValue: "Recovery action: {{state}}",
+        state: ariaState,
+      })}
       data-recovery-state={cardState}
       data-recovery-kind={action.kind}
       className={cn(
@@ -1025,10 +1139,14 @@ export function IssueRecoveryActionCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-(length:--text-micro) font-semibold uppercase tracking-(--tracking-eyebrow)">
-            <span className={tone.labelClass}>{tone.label}</span>
+            <span className={tone.labelClass}>
+              {t(`issueRecoveryActionCard.stateTone.${cardState}`, { defaultValue: tone.label })}
+            </span>
             <span className="text-muted-foreground/60" aria-hidden>·</span>
             <code className="rounded bg-background/70 px-1.5 py-0.5 font-mono text-(length:--text-micro) tracking-normal text-muted-foreground">
-              {KIND_LABEL[action.kind] ?? action.kind}
+              {t(`issueRecoveryActionCard.kind.${action.kind}.label`, {
+                defaultValue: KIND_LABEL[action.kind] ?? action.kind,
+              })}
             </code>
             {updatedAtLabel ? (
               <>
@@ -1044,39 +1162,58 @@ export function IssueRecoveryActionCard({
       </header>
       {variant === "compact" ? null : (
       <dl className={cn("border-t bg-background/40 dark:bg-background/20", tone.divider)}>
-        <MetadataRow label="Owner">
+        <MetadataRow label={t("issueRecoveryActionCard.metadata.owner", { defaultValue: "Owner" })}>
           <span className="inline-flex flex-wrap items-center gap-1.5">
             {action.ownerType === "agent" && action.ownerAgentId ? (
               <>
-                <span className="text-muted-foreground">Recovery:</span>
+                <span className="text-muted-foreground">
+                  {t("issueRecoveryActionCard.owner.recovery", { defaultValue: "Recovery:" })}
+                </span>
                 <AgentLink agentId={action.ownerAgentId} agentMap={agentMap} />
               </>
             ) : action.ownerType === "board" ? (
-              <span className="font-medium">Board</span>
+              <span className="font-medium">
+                {t("issueRecoveryActionCard.owner.board", { defaultValue: "Board" })}
+              </span>
             ) : action.ownerType === "user" && action.ownerUserId ? (
-              <span className="font-medium">user {action.ownerUserId.slice(0, 6)}</span>
+              <span className="font-medium">
+                {t("issueRecoveryActionCard.owner.user", {
+                  defaultValue: "user {{id}}",
+                  id: action.ownerUserId.slice(0, 6),
+                })}
+              </span>
             ) : action.ownerType === "system" ? (
-              <span className="font-medium">System</span>
+              <span className="font-medium">
+                {t("issueRecoveryActionCard.owner.system", { defaultValue: "System" })}
+              </span>
             ) : (
-              <span className="text-muted-foreground">unassigned — pick one to wake them</span>
+              <span className="text-muted-foreground">
+                {t("issueRecoveryActionCard.owner.unassigned", {
+                  defaultValue: "unassigned — pick one to wake them",
+                })}
+              </span>
             )}
             {action.returnOwnerAgentId ? (
               <>
-                <span className="text-muted-foreground">→ Returns to:</span>
+                <span className="text-muted-foreground">
+                  {t("issueRecoveryActionCard.owner.returnsTo", { defaultValue: "→ Returns to:" })}
+                </span>
                 <AgentLink agentId={action.returnOwnerAgentId} agentMap={agentMap} />
               </>
             ) : null}
           </span>
         </MetadataRow>
-        <MetadataRow label="Source run">
+        <MetadataRow label={t("issueRecoveryActionCard.metadata.sourceRun", { defaultValue: "Source run" })}>
           <RunChip runId={sourceRunId} agentId={action.previousOwnerAgentId} />
         </MetadataRow>
         {correctiveRunId ? (
-          <MetadataRow label="Corrective run">
+          <MetadataRow
+            label={t("issueRecoveryActionCard.metadata.correctiveRun", { defaultValue: "Corrective run" })}
+          >
             <RunChip runId={correctiveRunId} agentId={action.previousOwnerAgentId} />
           </MetadataRow>
         ) : null}
-        <MetadataRow label="Evidence">
+        <MetadataRow label={t("issueRecoveryActionCard.metadata.evidence", { defaultValue: "Evidence" })}>
           {evidenceSummary ? (
             evidenceSummary.isCode ? (
               <span className="break-words font-mono text-(length:--text-micro) text-foreground/80">
@@ -1089,28 +1226,42 @@ export function IssueRecoveryActionCard({
             <MissingValue />
           )}
         </MetadataRow>
-        <MetadataRow label="Next action">
+        <MetadataRow label={t("issueRecoveryActionCard.metadata.nextAction", { defaultValue: "Next action" })}>
           {action.nextAction ? <span>{action.nextAction}</span> : <MissingValue />}
         </MetadataRow>
-        <MetadataRow label="Follow-up">
+        <MetadataRow label={t("issueRecoveryActionCard.metadata.followUp", { defaultValue: "Follow-up" })}>
           <span className="inline-flex flex-wrap items-center gap-1.5">
             {wakeSummary ? <span>{wakeSummary}</span> : <MissingValue />}
             {showAttempt ? (
               <span className="rounded-md border border-border/50 bg-background/60 px-1.5 py-0.5 text-(length:--text-micro) text-muted-foreground">
-                attempt {action.attemptCount} of {action.maxAttempts}
+                {t("issueRecoveryActionCard.followUp.attempt", {
+                  defaultValue: "attempt {{current}} of {{max}}",
+                  current: action.attemptCount,
+                  max: action.maxAttempts,
+                })}
               </span>
             ) : null}
             {showTimeoutInline ? (
               <span className="rounded-md border border-border/50 bg-background/60 px-1.5 py-0.5 text-(length:--text-micro) text-muted-foreground">
-                Times out {formatTimeShort(action.timeoutAt) ?? "soon"}
+                {t("issueRecoveryActionCard.followUp.timesOut", {
+                  defaultValue: "Times out {{when}}",
+                  when:
+                    formatTimeShort(action.timeoutAt) ??
+                    t("issueRecoveryActionCard.followUp.soon", { defaultValue: "soon" }),
+                })}
               </span>
             ) : null}
           </span>
         </MetadataRow>
         {cardState === "resolved" && action.outcome ? (
-          <MetadataRow label="Resolution">
+          <MetadataRow label={t("issueRecoveryActionCard.metadata.resolution", { defaultValue: "Resolution" })}>
             <span className={cn("font-medium", tone.labelClass)}>
-              Resolved as {OUTCOME_LABEL[action.outcome]}
+              {t("issueRecoveryActionCard.resolution.resolvedAs", {
+                defaultValue: "Resolved as {{outcome}}",
+                outcome: t(`issueRecoveryActionCard.outcome.${action.outcome}`, {
+                  defaultValue: OUTCOME_LABEL[action.outcome],
+                }),
+              })}
               {action.resolvedAt ? ` · ${formatTimeShort(action.resolvedAt) ?? ""}` : ""}
             </span>
           </MetadataRow>
@@ -1128,9 +1279,9 @@ export function IssueRecoveryActionCard({
                   size="sm"
                   variant="default"
                   data-testid="recovery-action-resolve-trigger"
-                  aria-label="Resolve recovery"
+                  aria-label={t("issueRecoveryActionCard.resolve.ariaLabel", { defaultValue: "Resolve recovery" })}
                 >
-                  Resolve…
+                  {t("issueRecoveryActionCard.resolve.trigger", { defaultValue: "Resolve…" })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -1139,7 +1290,7 @@ export function IssueRecoveryActionCard({
                 className="w-72 p-1.5"
               >
                 <div className="px-2 py-1 text-(length:--text-micro) font-semibold uppercase tracking-(--tracking-eyebrow) text-muted-foreground">
-                  Resolve recovery
+                  {t("issueRecoveryActionCard.resolve.heading", { defaultValue: "Resolve recovery" })}
                 </div>
                 <div className="flex flex-col">
                   {visibleResolveOptions.map((option) => (
@@ -1153,8 +1304,16 @@ export function IssueRecoveryActionCard({
                         option.destructive ? "text-destructive" : null,
                       )}
                     >
-                      <span className="font-medium leading-5">{option.label}</span>
-                      <span className="text-(length:--text-micro) leading-4 text-muted-foreground">{option.description}</span>
+                      <span className="font-medium leading-5">
+                        {t(`issueRecoveryActionCard.resolveOptions.${option.outcome}.label`, {
+                          defaultValue: option.label,
+                        })}
+                      </span>
+                      <span className="text-(length:--text-micro) leading-4 text-muted-foreground">
+                        {t(`issueRecoveryActionCard.resolveOptions.${option.outcome}.description`, {
+                          defaultValue: option.description,
+                        })}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -1175,7 +1334,7 @@ export function IssueRecoveryActionCard({
               ) : (
                 <RefreshCw className="h-3.5 w-3.5" aria-hidden />
               )}
-              Reconcile forward &amp; continue
+              {t("issueRecoveryActionCard.reconcileForward", { defaultValue: "Reconcile forward & continue" })}
             </Button>
           ) : null}
           {showRepairAction && divergence ? (
@@ -1203,13 +1362,13 @@ export function IssueRecoveryActionCard({
                   ) : (
                     <GitBranchPlus className="h-3.5 w-3.5" aria-hidden />
                   )}
-                  Re-issue on isolated workspace
+                  {t("issueRecoveryActionCard.reissue.title", { defaultValue: "Re-issue on isolated workspace" })}
                   {reissueRecommended ? (
                     <span
                       data-testid="recovery-reissue-recommended"
                       className="ml-1 rounded-sm bg-background/25 px-1.5 py-0.5 text-(length:--text-nano) font-semibold uppercase tracking-(--tracking-label)"
                     >
-                      Recommended
+                      {t("issueRecoveryActionCard.reissue.recommended", { defaultValue: "Recommended" })}
                     </span>
                   ) : null}
                 </Button>
@@ -1217,28 +1376,42 @@ export function IssueRecoveryActionCard({
               <PopoverContent align="start" sideOffset={6} className="w-80 space-y-3 p-3">
                 <div className="space-y-1">
                   <div className="text-(length:--text-micro) font-semibold uppercase tracking-(--tracking-eyebrow) text-muted-foreground">
-                    Re-issue on isolated workspace
+                    {t("issueRecoveryActionCard.reissue.title", {
+                      defaultValue: "Re-issue on isolated workspace",
+                    })}
                   </div>
                   <p className="text-xs leading-5 text-muted-foreground">
-                    Creates a fresh copy of this task on an isolated git worktree based on the live
-                    branch. Your current workspace and its commits are left untouched.
+                    {t("issueRecoveryActionCard.reissue.body", {
+                      defaultValue:
+                        "Creates a fresh copy of this task on an isolated git worktree based on the live branch. Your current workspace and its commits are left untouched.",
+                    })}
                   </p>
                 </div>
                 <dl className="space-y-1 rounded-md border border-border/70 bg-muted/30 px-2.5 py-2 text-(length:--text-micro)">
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-muted-foreground">Base ref</dt>
+                    <dt className="text-muted-foreground">
+                      {t("issueRecoveryActionCard.reissue.baseRef", { defaultValue: "Base ref" })}
+                    </dt>
                     <dd className="min-w-0 truncate font-mono text-foreground/90">{reissueBaseRef}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-muted-foreground">Recorded</dt>
+                    <dt className="text-muted-foreground">
+                      {t("issueRecoveryActionCard.reissue.recorded", { defaultValue: "Recorded" })}
+                    </dt>
                     <dd className="min-w-0 truncate font-mono text-foreground/80">
                       {divergence.expectedBranch ?? "—"}
                     </dd>
                   </div>
                   {reissueVerdictBadge ? (
                     <div className="flex items-center justify-between gap-2">
-                      <dt className="text-muted-foreground">Ancestry</dt>
-                      <dd className="font-medium">{reissueVerdictBadge.label}</dd>
+                      <dt className="text-muted-foreground">
+                        {t("issueRecoveryActionCard.reissue.ancestry", { defaultValue: "Ancestry" })}
+                      </dt>
+                      <dd className="font-medium">
+                        {t(`issueRecoveryActionCard.ancestry.${divergence.ancestryVerdict ?? "unknown"}`, {
+                          defaultValue: reissueVerdictBadge.label,
+                        })}
+                      </dd>
                     </div>
                   ) : null}
                 </dl>
@@ -1257,7 +1430,11 @@ export function IssueRecoveryActionCard({
                     })
                   }
                 >
-                  {reissuePending ? "Creating…" : "Create isolated re-issue"}
+                  {reissuePending
+                    ? t("issueRecoveryActionCard.reissue.creating", { defaultValue: "Creating…" })
+                    : t("issueRecoveryActionCard.reissue.confirm", {
+                        defaultValue: "Create isolated re-issue",
+                      })}
                 </Button>
               </PopoverContent>
             </Popover>
@@ -1272,11 +1449,15 @@ export function IssueRecoveryActionCard({
           {showResolveActions ? (
             cardState === "observe_only" ? (
               <span className="text-(length:--text-micro) text-muted-foreground">
-                Recovery is observing without interrupting the live run.
+                {t("issueRecoveryActionCard.footer.observing", {
+                  defaultValue: "Recovery is observing without interrupting the live run.",
+                })}
               </span>
             ) : (
               <span className="text-(length:--text-micro) text-muted-foreground">
-                The card stays open until an explicit decision is recorded.
+                {t("issueRecoveryActionCard.footer.stayOpen", {
+                  defaultValue: "The card stays open until an explicit decision is recorded.",
+                })}
               </span>
             )
           ) : null}

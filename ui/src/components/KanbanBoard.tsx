@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import {
   DndContext,
   DragOverlay,
@@ -181,6 +182,7 @@ function KanbanColumn({
   revealIncrement: number;
   onShowMore: () => void;
 }) {
+  const { t } = useTranslation();
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   const isEmpty = issues.length === 0;
@@ -252,12 +254,12 @@ function KanbanColumn({
             className="mt-1 flex w-full items-center justify-center rounded-md border border-dashed border-border bg-background/70 px-2 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
             onClick={onShowMore}
           >
-            Show {nextRevealCount} more
+            {t("kanbanBoard.showMore", { defaultValue: "Show {{count}} more", count: nextRevealCount })}
           </button>
         ) : null}
         {issues.length > 0 && (hiddenCount > 0 || issues.length >= visibleCount) ? (
           <p className="px-1 pt-1 text-(length:--text-micro) text-muted-foreground">
-            Showing {visibleIssues.length} of {issues.length}
+            {t("kanbanBoard.showingCount", { defaultValue: "Showing {{visible}} of {{total}}", visible: visibleIssues.length, total: issues.length })}
           </p>
         ) : null}
       </div>
@@ -284,6 +286,7 @@ function KanbanCard({
   compact?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -333,11 +336,11 @@ function KanbanCard({
           {isSuccessfulRunHandoffRequired(issue) ? (
             <Badge variant="outline"
               className="border-amber-400/45 bg-amber-50/60 px-1.5 text-(length:--text-nano) text-amber-700 dark:border-amber-300/35 dark:bg-amber-400/10 dark:text-amber-300"
-              title="This task needs a next step"
-              aria-label="Needs next step"
+              title={t("kanbanBoard.nextStep.tooltip", { defaultValue: "This task needs a next step" })}
+              aria-label={t("kanbanBoard.nextStep.ariaLabel", { defaultValue: "Needs next step" })}
             >
               <AlertTriangle className="h-3 w-3" />
-              Next step
+              {t("kanbanBoard.nextStep.label", { defaultValue: "Next step" })}
             </Badge>
           ) : null}
           {isLive && (
@@ -346,16 +349,20 @@ function KanbanCard({
                 <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
               </span>
-              {compact ? "Live" : null}
+              {compact ? t("kanbanBoard.live", { defaultValue: "Live" }) : null}
             </span>
           )}
           {!isLive && subtreeLiveCount > 0 && (
             <Badge variant="outline"
               className="border-border px-1.5 text-(length:--text-nano) text-muted-foreground"
-              title={`${subtreeLiveCount} sub-task${subtreeLiveCount === 1 ? "" : "s"} running below`}
+              title={
+                subtreeLiveCount === 1
+                  ? t("kanbanBoard.subtreeLive.tooltipOne", { defaultValue: "{{count}} sub-task running below", count: subtreeLiveCount })
+                  : t("kanbanBoard.subtreeLive.tooltipOther", { defaultValue: "{{count}} sub-tasks running below", count: subtreeLiveCount })
+              }
             >
               <span className="h-2 w-2 shrink-0 rounded-full border border-muted-foreground/60" aria-hidden="true" />
-              {subtreeLiveCount} live below
+              {t("kanbanBoard.subtreeLive.badge", { defaultValue: "{{count}} live below", count: subtreeLiveCount })}
             </Badge>
           )}
         </div>

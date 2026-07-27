@@ -26,6 +26,7 @@ import { cn, relativeTime } from "@/lib/utils";
 import { documentAnnotationsApi, type DocumentAnnotationTarget } from "@/api/document-annotations";
 import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/queryKeys";
+import { t, useTranslation } from "@/i18n";
 import { AgentIcon } from "./AgentIconPicker";
 import { deriveInitials } from "./Identity";
 import { MarkdownBody } from "./MarkdownBody";
@@ -65,6 +66,7 @@ export interface AnnotationPanelProps {
 }
 
 export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
+  const { t } = useTranslation();
   if (props.isMobile) {
     return (
       <Sheet open={props.open} onOpenChange={props.onOpenChange}>
@@ -74,7 +76,11 @@ export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
           className="paperclip-doc-annotation-sheet z-(--z-60) flex max-h-(--sz-88vh) flex-col rounded-none border-t border-border bg-popover p-0 text-popover-foreground shadow-2xl"
         >
           <SheetTitle className="sr-only">
-            Comments on {props.documentKey} revision {props.documentRevisionNumber}
+            {t("documentAnnotationPanel.sheetTitle", {
+              defaultValue: "Comments on {{documentKey}} revision {{revisionNumber}}",
+              documentKey: props.documentKey,
+              revisionNumber: props.documentRevisionNumber,
+            })}
           </SheetTitle>
           <div className="mx-auto mt-2 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden="true" />
           <AnnotationPanelBody {...props} />
@@ -88,7 +94,11 @@ export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
   return (
     <aside
       role="complementary"
-      aria-label={`Annotations for ${props.documentKey.toUpperCase()}, revision ${props.documentRevisionNumber}`}
+      aria-label={t("documentAnnotationPanel.regionLabel", {
+        defaultValue: "Annotations for {{documentKey}}, revision {{revisionNumber}}",
+        documentKey: props.documentKey.toUpperCase(),
+        revisionNumber: props.documentRevisionNumber,
+      })}
       data-testid="document-annotation-panel"
       className={cn(
         "isolate flex h-full max-h-(--sz-80vh) w-(--sz-360px) shrink-0 flex-col overflow-hidden rounded-none border border-border bg-popover text-popover-foreground shadow-xl",
@@ -102,6 +112,7 @@ export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
 }
 
 function AnnotationPanelBody(props: AnnotationPanelProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [composerValue, setComposerValue] = useState("");
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
@@ -123,10 +134,10 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
     const user = session?.user;
     return {
       id: user?.id ?? null,
-      name: user?.name?.trim() || user?.email?.trim() || "You",
+      name: user?.name?.trim() || user?.email?.trim() || t("documentAnnotationPanel.currentUser.you", { defaultValue: "You" }),
       image: user?.image ?? null,
     };
-  }, [session]);
+  }, [session, t]);
 
   // Show every thread that can be anchored in the document (orphaned threads have
   // lost their anchor). Filters were removed in favour of a single simple list.
@@ -218,7 +229,7 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
       }
       setMutationError(error instanceof Error && error.message
         ? error.message
-        : "Failed to create comment.");
+        : t("documentAnnotationPanel.errors.createComment", { defaultValue: "Failed to create comment." }));
     },
     onSuccess: (thread, _body, context) => {
       // Swap the optimistic placeholder for the real thread before refetch settles.
@@ -266,7 +277,7 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
       }
       setMutationError(error instanceof Error && error.message
         ? error.message
-        : "Failed to add reply.");
+        : t("documentAnnotationPanel.errors.addReply", { defaultValue: "Failed to add reply." }));
     },
     onSuccess: (_comment, variables) => {
       setReplyDrafts((current) => ({ ...current, [variables.threadId]: "" }));
@@ -296,7 +307,7 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
       }
       setMutationError(error instanceof Error && error.message
         ? error.message
-        : "Failed to update comment status.");
+        : t("documentAnnotationPanel.errors.updateStatus", { defaultValue: "Failed to update comment status." }));
     },
     onSuccess: () => setMutationError(null),
     onSettled: () => invalidateAll(),
@@ -337,7 +348,10 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
         className="flex items-center justify-end gap-1 border-b border-border bg-popover px-2 py-1.5"
       >
         <span className="text-(length:--text-micro) tabular-nums text-muted-foreground">
-          rev {props.documentRevisionNumber}
+          {t("documentAnnotationPanel.revisionShort", {
+            defaultValue: "rev {{revisionNumber}}",
+            revisionNumber: props.documentRevisionNumber,
+          })}
         </span>
         <Button
           type="button"
@@ -348,7 +362,7 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
             props.onFocusThread(null);
             props.onOpenChange(false);
           }}
-          aria-label="Close annotation panel"
+          aria-label={t("documentAnnotationPanel.actions.closePanel", { defaultValue: "Close annotation panel" })}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -438,7 +452,7 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
                 }
               }
             }}
-            placeholder="Write a comment…"
+            placeholder={t("documentAnnotationPanel.composer.placeholder", { defaultValue: "Write a comment…" })}
             disabled={props.newCommentDisabled}
             className="resize-y rounded-none text-sm"
           />
@@ -452,7 +466,7 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
                 setComposerValue("");
               }}
             >
-              Cancel
+              {t("documentAnnotationPanel.actions.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               type="button"
@@ -465,7 +479,9 @@ function AnnotationPanelBody(props: AnnotationPanelProps) {
               }
               onClick={() => createThread.mutate(composerValue.trim())}
             >
-              {createThread.isPending ? "Posting…" : "Comment"}
+              {createThread.isPending
+                ? t("documentAnnotationPanel.actions.posting", { defaultValue: "Posting…" })
+                : t("documentAnnotationPanel.actions.comment", { defaultValue: "Comment" })}
             </Button>
           </div>
         </div>
@@ -489,6 +505,7 @@ function ThreadCard(props: {
   agentMap?: ReadonlyMap<string, Pick<Agent, "id" | "name"> & Partial<Pick<Agent, "icon">>>;
   userProfileMap?: ReadonlyMap<string, CompanyUserProfile>;
 }) {
+  const { t } = useTranslation();
   const { thread } = props;
   const latestComment = thread.comments[thread.comments.length - 1];
 
@@ -542,7 +559,7 @@ function ThreadCard(props: {
                   }
                 }
               }}
-              placeholder="Reply…"
+              placeholder={t("documentAnnotationPanel.reply.placeholder", { defaultValue: "Reply…" })}
               className="resize-y rounded-none text-sm"
               disabled={props.pendingReply}
             />
@@ -557,11 +574,11 @@ function ThreadCard(props: {
               >
                 {thread.status === "resolved" ? (
                   <>
-                    <RotateCcw className="h-3 w-3" /> Reopen
+                    <RotateCcw className="h-3 w-3" /> {t("documentAnnotationPanel.actions.reopen", { defaultValue: "Reopen" })}
                   </>
                 ) : (
                   <>
-                    <Check className="h-3 w-3" /> Resolve
+                    <Check className="h-3 w-3" /> {t("documentAnnotationPanel.actions.resolve", { defaultValue: "Resolve" })}
                   </>
                 )}
               </Button>
@@ -571,7 +588,9 @@ function ThreadCard(props: {
                 disabled={!props.replyDraft.trim() || props.pendingReply}
                 onClick={props.onSubmitReply}
               >
-                {props.pendingReply ? "Sending…" : "Reply"}
+                {props.pendingReply
+                  ? t("documentAnnotationPanel.actions.sending", { defaultValue: "Sending…" })
+                  : t("documentAnnotationPanel.actions.reply", { defaultValue: "Reply" })}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -580,8 +599,8 @@ function ThreadCard(props: {
                     variant="ghost"
                     size="icon-xs"
                     className="text-muted-foreground"
-                    title="More actions"
-                    aria-label="More thread actions"
+                    title={t("documentAnnotationPanel.actions.moreActionsTitle", { defaultValue: "More actions" })}
+                    aria-label={t("documentAnnotationPanel.actions.moreActionsLabel", { defaultValue: "More thread actions" })}
                   >
                     <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
@@ -594,7 +613,7 @@ function ThreadCard(props: {
                     }}
                   >
                     <Copy className="h-3.5 w-3.5" />
-                    Copy link
+                    {t("documentAnnotationPanel.actions.copyLink", { defaultValue: "Copy link" })}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -603,7 +622,15 @@ function ThreadCard(props: {
         ) : (
           <p className="px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">
-              {thread.comments.length} comment{thread.comments.length === 1 ? "" : "s"}
+              {thread.comments.length === 1
+                ? t("documentAnnotationPanel.thread.commentCountOne", {
+                    defaultValue: "{{count}} comment",
+                    count: thread.comments.length,
+                  })
+                : t("documentAnnotationPanel.thread.commentCountOther", {
+                    defaultValue: "{{count}} comments",
+                    count: thread.comments.length,
+                  })}
             </span>
             {latestComment ? <span className="ml-1">· {truncate(latestComment.body, 120)}</span> : null}
           </p>
@@ -624,6 +651,7 @@ function CommentRow({
   agentMap?: ReadonlyMap<string, Pick<Agent, "id" | "name"> & Partial<Pick<Agent, "icon">>>;
   userProfileMap?: ReadonlyMap<string, CompanyUserProfile>;
 }) {
+  const { t } = useTranslation();
   const author = resolveAuthor(comment, { agentMap, userProfileMap });
   return (
     <div
@@ -650,7 +678,7 @@ function CommentRow({
           </Avatar>
           <span className="truncate font-medium text-foreground">{author.name}</span>
           {author.role === "agent" ? (
-            <span className="text-muted-foreground">· agent</span>
+            <span className="text-muted-foreground">· {t("documentAnnotationPanel.comment.agentRole", { defaultValue: "agent" })}</span>
           ) : null}
         </span>
         <span className="shrink-0 text-muted-foreground">{relativeTime(comment.createdAt)}</span>
@@ -688,7 +716,12 @@ function resolveAuthor(
       imageUrl: profile?.image ?? null,
     };
   }
-  return { name: comment.authorType === "agent" ? "Agent" : "Board", role: comment.authorType === "agent" ? "agent" : "board" };
+  return {
+    name: comment.authorType === "agent"
+      ? t("documentAnnotationPanel.author.agent", { defaultValue: "Agent" })
+      : t("documentAnnotationPanel.author.board", { defaultValue: "Board" }),
+    role: comment.authorType === "agent" ? "agent" : "board",
+  };
 }
 
 interface OptimisticAuthor {

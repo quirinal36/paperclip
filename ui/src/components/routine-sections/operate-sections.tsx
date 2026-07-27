@@ -17,17 +17,19 @@ import { LiveRunWidget } from "../LiveRunWidget";
 import { RoutineHistoryTab } from "../RoutineHistoryTab";
 import { RoutineActivityRow } from "../RoutineActivityRow";
 import { useRoutineDetail } from "./context";
+import { t, useTranslation } from "@/i18n";
 
 const DATE_WINDOW_OPTIONS: { value: string; label: string; ms: number | null }[] = [
-  { value: "any", label: "Any time", ms: null },
-  { value: "24h", label: "Last 24h", ms: 24 * 60 * 60 * 1000 },
-  { value: "7d", label: "Last 7d", ms: 7 * 24 * 60 * 60 * 1000 },
-  { value: "30d", label: "Last 30d", ms: 30 * 24 * 60 * 60 * 1000 },
+  { value: "any", label: t("operateSections.dateWindow.anyTime", { defaultValue: "Any time" }), ms: null },
+  { value: "24h", label: t("operateSections.dateWindow.last24h", { defaultValue: "Last 24h" }), ms: 24 * 60 * 60 * 1000 },
+  { value: "7d", label: t("operateSections.dateWindow.last7d", { defaultValue: "Last 7d" }), ms: 7 * 24 * 60 * 60 * 1000 },
+  { value: "30d", label: t("operateSections.dateWindow.last30d", { defaultValue: "Last 30d" }), ms: 30 * 24 * 60 * 60 * 1000 },
 ];
 
 export function RunsSection() {
   const ctx = useRoutineDetail();
   const { routine, routineRuns, hasLiveRun, activeIssueId, onOpenRunDialog } = ctx;
+  const { t } = useTranslation();
   const runs = useMemo(() => routineRuns ?? [], [routineRuns]);
 
   const [sourceFilter, setSourceFilter] = useState("any");
@@ -56,16 +58,16 @@ export function RunsSection() {
 
   const activeFilters = useMemo<FilterValue[]>(() => {
     const list: FilterValue[] = [];
-    if (sourceFilter !== "any") list.push({ key: "source", label: "Source", value: sourceFilter });
+    if (sourceFilter !== "any") list.push({ key: "source", label: t("operateSections.filters.source", { defaultValue: "Source" }), value: sourceFilter });
     if (statusFilter !== "any") {
-      list.push({ key: "status", label: "Status", value: statusFilter.replaceAll("_", " ") });
+      list.push({ key: "status", label: t("operateSections.filters.status", { defaultValue: "Status" }), value: statusFilter.replaceAll("_", " ") });
     }
     if (dateFilter !== "any") {
       const label = DATE_WINDOW_OPTIONS.find((option) => option.value === dateFilter)?.label ?? dateFilter;
-      list.push({ key: "date", label: "Date", value: label });
+      list.push({ key: "date", label: t("operateSections.filters.date", { defaultValue: "Date" }), value: label });
     }
     return list;
-  }, [sourceFilter, statusFilter, dateFilter]);
+  }, [sourceFilter, statusFilter, dateFilter, t]);
 
   function clearFilters() {
     setSourceFilter("any");
@@ -88,8 +90,10 @@ export function RunsSection() {
       {runs.length === 0 ? (
         <EmptyState
           icon={Play}
-          message="No runs yet. Trigger a run from the header or wait for the schedule."
-          action="Run now"
+          message={t("operateSections.runs.empty.message", {
+            defaultValue: "No runs yet. Trigger a run from the header or wait for the schedule.",
+          })}
+          action={t("operateSections.runs.empty.action", { defaultValue: "Run now" })}
           onAction={onOpenRunDialog}
         />
       ) : (
@@ -98,12 +102,12 @@ export function RunsSection() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger size="sm" className="h-8 w-auto gap-1.5 text-xs" aria-label="Filter by source">
-                  <span className="text-muted-foreground">Source:</span>
+                <SelectTrigger size="sm" className="h-8 w-auto gap-1.5 text-xs" aria-label={t("operateSections.filters.sourceAriaLabel", { defaultValue: "Filter by source" })}>
+                  <span className="text-muted-foreground">{t("operateSections.filters.sourceLabel", { defaultValue: "Source:" })}</span>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">any</SelectItem>
+                  <SelectItem value="any">{t("operateSections.filters.any", { defaultValue: "any" })}</SelectItem>
                   {sourceOptions.map((source) => (
                     <SelectItem key={source} value={source}>
                       {source}
@@ -112,12 +116,12 @@ export function RunsSection() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger size="sm" className="h-8 w-auto gap-1.5 text-xs" aria-label="Filter by status">
-                  <span className="text-muted-foreground">Status:</span>
+                <SelectTrigger size="sm" className="h-8 w-auto gap-1.5 text-xs" aria-label={t("operateSections.filters.statusAriaLabel", { defaultValue: "Filter by status" })}>
+                  <span className="text-muted-foreground">{t("operateSections.filters.statusLabel", { defaultValue: "Status:" })}</span>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">any</SelectItem>
+                  <SelectItem value="any">{t("operateSections.filters.any", { defaultValue: "any" })}</SelectItem>
                   {statusOptions.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status.replaceAll("_", " ")}
@@ -126,8 +130,8 @@ export function RunsSection() {
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger size="sm" className="h-8 w-auto gap-1.5 text-xs" aria-label="Filter by date">
-                  <span className="text-muted-foreground">Date:</span>
+                <SelectTrigger size="sm" className="h-8 w-auto gap-1.5 text-xs" aria-label={t("operateSections.filters.dateAriaLabel", { defaultValue: "Filter by date" })}>
+                  <span className="text-muted-foreground">{t("operateSections.filters.dateLabel", { defaultValue: "Date:" })}</span>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -145,15 +149,15 @@ export function RunsSection() {
           {filtered.length === 0 ? (
             <EmptyState
               icon={SlidersHorizontal}
-              message="No runs match these filters."
-              action="Clear filters"
+              message={t("operateSections.runs.noMatch.message", { defaultValue: "No runs match these filters." })}
+              action={t("operateSections.runs.noMatch.action", { defaultValue: "Clear filters" })}
               onAction={clearFilters}
             />
           ) : (
             <div className="rounded-lg border border-border">
               {filtered.map((run) => {
                 const label = dedupedTriggerLabel(run.trigger);
-                const title = run.linkedIssue?.title ?? label ?? "Run";
+                const title = run.linkedIssue?.title ?? label ?? t("operateSections.runs.defaultTitle", { defaultValue: "Run" });
                 return (
                   <EntityRow
                     key={run.id}
@@ -199,13 +203,14 @@ export function RunsSection() {
 
 export function ActivitySection() {
   const ctx = useRoutineDetail();
+  const { t } = useTranslation();
   const { activity } = ctx;
   const events = activity ?? [];
 
   const groups = useMemo(() => {
     const byDay = new Map<string, typeof events>();
     for (const event of events) {
-      let label = "Earlier";
+      let label = t("operateSections.activity.earlier", { defaultValue: "Earlier" });
       try {
         label = new Date(event.createdAt).toLocaleDateString(undefined, {
           weekday: "short",
@@ -220,10 +225,10 @@ export function ActivitySection() {
       byDay.set(label, bucket);
     }
     return Array.from(byDay.entries());
-  }, [events]);
+  }, [events, t]);
 
   if (events.length === 0) {
-    return <EmptyState icon={ActivityIcon} message="No activity yet." />;
+    return <EmptyState icon={ActivityIcon} message={t("operateSections.activity.empty", { defaultValue: "No activity yet." })} />;
   }
 
   return (

@@ -25,6 +25,7 @@ import { toolsApi } from "@/api/tools";
 import { agentsApi } from "@/api/agents";
 import { projectsApi } from "@/api/projects";
 import { ApiError } from "@/api/client";
+import { t, useTranslation } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -217,7 +218,7 @@ function policyToForm(policy: ToolPolicy): PolicyFormState {
 function buildPolicyPayload(form: PolicyFormState) {
   const priority = Number(form.priority);
   if (!Number.isInteger(priority) || priority < 0 || priority > 10000) {
-    throw new Error("Priority must be an integer from 0 to 10000");
+    throw new Error(t("policiesTab.errors.priorityRange", { defaultValue: "Priority must be an integer from 0 to 10000" }));
   }
   const selectors: Record<string, unknown> = {};
   if (form.actorType !== ANY_VALUE) selectors.actorType = form.actorType;
@@ -234,9 +235,9 @@ function buildPolicyPayload(form: PolicyFormState) {
   if (form.policyType === "rate_limit") {
     const limit = Number(form.rateLimitLimit);
     const windowSeconds = Number(form.rateLimitWindowSeconds);
-    if (!Number.isInteger(limit) || limit <= 0) throw new Error("Limit must be a positive integer");
+    if (!Number.isInteger(limit) || limit <= 0) throw new Error(t("policiesTab.errors.limitPositive", { defaultValue: "Limit must be a positive integer" }));
     if (!Number.isInteger(windowSeconds) || windowSeconds <= 0) {
-      throw new Error("Window must be a positive number of seconds");
+      throw new Error(t("policiesTab.errors.windowPositive", { defaultValue: "Window must be a positive number of seconds" }));
     }
     config = { rateLimit: { limit, windowSeconds, keyBy: form.rateLimitKeyBy } };
   }
@@ -255,29 +256,36 @@ function buildPolicyPayload(form: PolicyFormState) {
 
 function windowLabel(seconds: string | number | null | undefined) {
   const value = Number(seconds);
-  if (value === 3600) return "hour";
-  if (value === 86400) return "day";
-  if (value === 60) return "minute";
+  if (value === 3600) return t("policiesTab.window.hour", { defaultValue: "hour" });
+  if (value === 86400) return t("policiesTab.window.day", { defaultValue: "day" });
+  if (value === 60) return t("policiesTab.window.minute", { defaultValue: "minute" });
   return `${Number.isFinite(value) && value > 0 ? value : 3600}s`;
 }
 
 function outcomeLabel(policy: Pick<ToolPolicy, "policyType" | "config"> | PolicyFormState) {
   const policyType = String(policy.policyType);
-  if (policyType === "allow") return "Allow";
-  if (policyType === "block") return "Block";
-  if (policyType === "require_approval") return "Ask first";
-  if (policyType === "redact") return "Unsupported: redact";
-  if (policyType === "trust_rule") return "Allow";
-  if (policyType === "validate") return "Unsupported: custom check";
+  if (policyType === "allow") return t("policiesTab.outcomeLabel.allow", { defaultValue: "Allow" });
+  if (policyType === "block") return t("policiesTab.outcomeLabel.block", { defaultValue: "Block" });
+  if (policyType === "require_approval") return t("policiesTab.outcomeLabel.askFirst", { defaultValue: "Ask first" });
+  if (policyType === "redact") return t("policiesTab.outcomeLabel.redact", { defaultValue: "Unsupported: redact" });
+  if (policyType === "trust_rule") return t("policiesTab.outcomeLabel.allow", { defaultValue: "Allow" });
+  if (policyType === "validate") return t("policiesTab.outcomeLabel.validate", { defaultValue: "Unsupported: custom check" });
   const config = "config" in policy && isRecord(policy.config) ? policy.config : {};
   const rateLimit = isRecord(config.rateLimit) ? config.rateLimit : config;
   const limit = "rateLimitLimit" in policy ? policy.rateLimitLimit : rateLimit.limit;
   const seconds = "rateLimitWindowSeconds" in policy ? policy.rateLimitWindowSeconds : rateLimit.windowSeconds;
-  return `Limit to ${limit ?? 50}/${windowLabel(seconds as string | number | null | undefined)}`;
+  return t("policiesTab.outcomeLabel.limitTo", {
+    defaultValue: "Limit to {{limit}}/{{window}}",
+    limit: limit ?? 50,
+    window: windowLabel(seconds as string | number | null | undefined),
+  });
 }
 
 function capabilitySentence(value: string | null | undefined) {
-  return CAPABILITY_OPTIONS.find((item) => item.value === value)?.sentence ?? `${value} actions`;
+  const option = CAPABILITY_OPTIONS.find((item) => item.value === value);
+  return option
+    ? t(`policiesTab.capabilitySentences.${option.value}`, { defaultValue: option.sentence })
+    : t("policiesTab.capabilitySentences.fallback", { defaultValue: "{{value}} actions", value });
 }
 
 function toolDisplayName(toolName: string, catalogByToolName: Map<string, ToolCatalogEntry>) {
@@ -301,24 +309,28 @@ function policySentence(
   const actorType = selectValue(selectors, "actorType");
   const catalogById = new Map([...catalogByToolName.values()].map((tool) => [tool.id, tool]));
 
-  let who = "any agent";
-  if (agentIds.length === 1) who = maps.agent.get(agentIds[0]!) ?? "one agent";
-  else if (agentIds.length > 1) who = `${agentIds.length} agents`;
-  else if (projectIds.length === 1) who = `agents in ${maps.project.get(projectIds[0]!) ?? "one project"}`;
-  else if (projectIds.length > 1) who = `agents in ${projectIds.length} projects`;
+  let who = t("policiesTab.who.anyAgent", { defaultValue: "any agent" });
+  if (agentIds.length === 1) who = maps.agent.get(agentIds[0]!) ?? t("policiesTab.who.oneAgent", { defaultValue: "one agent" });
+  else if (agentIds.length > 1) who = t("policiesTab.who.agentsCount", { defaultValue: "{{count}} agents", count: agentIds.length });
+  else if (projectIds.length === 1)
+    who = t("policiesTab.who.agentsInProject", {
+      defaultValue: "agents in {{project}}",
+      project: maps.project.get(projectIds[0]!) ?? t("policiesTab.who.oneProject", { defaultValue: "one project" }),
+    });
+  else if (projectIds.length > 1) who = t("policiesTab.who.agentsInProjectsCount", { defaultValue: "agents in {{count}} projects", count: projectIds.length });
   else if (actorType !== ANY_VALUE && actorType !== "agent") who = `${actorType}s`;
 
-  let uses = "anything";
+  let uses = t("policiesTab.uses.anything", { defaultValue: "anything" });
   if (tools.length === 1) uses = toolDisplayName(tools[0]!, catalogByToolName);
-  else if (tools.length > 1) uses = `${tools.length} specific actions`;
+  else if (tools.length > 1) uses = t("policiesTab.uses.specificActionsCount", { defaultValue: "{{count}} specific actions", count: tools.length });
   else if (catalogEntryIds.length === 1) {
     const tool = catalogById.get(catalogEntryIds[0]!);
-    uses = tool ? tool.title || toolDisplayName(tool.toolName, catalogByToolName) : "one action";
+    uses = tool ? tool.title || toolDisplayName(tool.toolName, catalogByToolName) : t("policiesTab.uses.oneAction", { defaultValue: "one action" });
   }
-  else if (catalogEntryIds.length > 1) uses = `${catalogEntryIds.length} specific actions`;
-  else if (appIds.length === 1) uses = maps.application.get(appIds[0]!) ?? "one app";
-  else if (appIds.length > 1) uses = `${appIds.length} apps`;
-  else if (connectionIds.length === 1) uses = maps.connection.get(connectionIds[0]!) ?? "one app";
+  else if (catalogEntryIds.length > 1) uses = t("policiesTab.uses.specificActionsCount", { defaultValue: "{{count}} specific actions", count: catalogEntryIds.length });
+  else if (appIds.length === 1) uses = maps.application.get(appIds[0]!) ?? t("policiesTab.uses.oneApp", { defaultValue: "one app" });
+  else if (appIds.length > 1) uses = t("policiesTab.uses.appsCount", { defaultValue: "{{count}} apps", count: appIds.length });
+  else if (connectionIds.length === 1) uses = maps.connection.get(connectionIds[0]!) ?? t("policiesTab.uses.oneApp", { defaultValue: "one app" });
   else if (risk !== ANY_VALUE) uses = capabilitySentence(risk);
 
   return { who, uses, outcome: outcomeLabel(policy) };
@@ -354,7 +366,12 @@ function buildPreviewConfig(form: PolicyFormState) {
 }
 
 function sentenceText(sentence: ReturnType<typeof policySentence>) {
-  return `When ${sentence.who} uses ${sentence.uses} → ${sentence.outcome}`;
+  return t("policiesTab.sentence.text", {
+    defaultValue: "When {{who}} uses {{uses}} → {{outcome}}",
+    who: sentence.who,
+    uses: sentence.uses,
+    outcome: sentence.outcome,
+  });
 }
 
 function OutcomeChip({ type, config }: { type: BuilderPolicyType | ToolPolicyType; config?: Record<string, unknown> | null }) {
@@ -376,9 +393,11 @@ type LookupMaps = {
 };
 
 function RuleSentence({ sentence }: { sentence: ReturnType<typeof policySentence> }) {
+  const { t } = useTranslation();
   return (
     <span>
-      When <strong>{sentence.who}</strong> uses <strong>{sentence.uses}</strong> →{" "}
+      {t("policiesTab.sentence.when", { defaultValue: "When" })} <strong>{sentence.who}</strong>{" "}
+      {t("policiesTab.sentence.uses", { defaultValue: "uses" })} <strong>{sentence.uses}</strong> →{" "}
       <strong>{sentence.outcome}</strong>
     </span>
   );
@@ -403,6 +422,7 @@ function PolicySimulator({
   onOpenChange: (open: boolean) => void;
   onEditPolicy: (policy: ToolPolicy) => void;
 }) {
+  const { t } = useTranslation();
   const { pushToast } = useToast();
   const [agentId, setAgentId] = useState<string>("");
   const [toolName, setToolName] = useState("");
@@ -418,7 +438,7 @@ function PolicySimulator({
     onError: (err) => {
       setResult(null);
       pushToast({
-        title: "Rule test failed",
+        title: t("policiesTab.simulator.testFailed", { defaultValue: "Rule test failed" }),
         body: err instanceof ApiError ? err.message : String(err),
         tone: "error",
       });
@@ -430,7 +450,12 @@ function PolicySimulator({
     : null;
   const verdict = result
     ? `${outcomeLabel({ policyType: result.decision as ToolPolicyType, config: null })} - ${
-        decidingPolicy ? `rule ${policies.findIndex((policy) => policy.id === decidingPolicy.id) + 1}` : result.explanation
+        decidingPolicy
+          ? t("policiesTab.simulator.ruleNumber", {
+              defaultValue: "rule {{number}}",
+              number: policies.findIndex((policy) => policy.id === decidingPolicy.id) + 1,
+            })
+          : result.explanation
       }`
     : null;
 
@@ -440,17 +465,21 @@ function PolicySimulator({
         <SheetHeader className="border-b border-border">
           <SheetTitle className="flex items-center gap-2 text-base">
             <FlaskConical className="h-4 w-4" />
-            Test a rule
+            {t("policiesTab.actions.testRule", { defaultValue: "Test a rule" })}
           </SheetTitle>
-          <SheetDescription>Pick an agent and an action to see what Paperclip would do.</SheetDescription>
+          <SheetDescription>
+            {t("policiesTab.simulator.description", {
+              defaultValue: "Pick an agent and an action to see what Paperclip would do.",
+            })}
+          </SheetDescription>
         </SheetHeader>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Agent</Label>
+              <Label>{t("policiesTab.simulator.agentLabel", { defaultValue: "Agent" })}</Label>
               <Select value={agentId} onValueChange={setAgentId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an agent" />
+                  <SelectValue placeholder={t("policiesTab.simulator.selectAgentPlaceholder", { defaultValue: "Select an agent" })} />
                 </SelectTrigger>
                 <SelectContent>
                   {agents.map((a) => (
@@ -462,17 +491,19 @@ function PolicySimulator({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="test-action">Action</Label>
+              <Label htmlFor="test-action">{t("policiesTab.simulator.actionLabel", { defaultValue: "Action" })}</Label>
               <Input
                 id="test-action"
                 value={toolName}
                 onChange={(e) => setToolName(e.target.value)}
-                placeholder="e.g. gmail.send_email"
+                placeholder={t("policiesTab.simulator.actionPlaceholder", { defaultValue: "e.g. gmail.send_email" })}
               />
             </div>
           </div>
           <Button size="sm" disabled={!agentId || !toolName.trim() || test.isPending} onClick={() => test.mutate()}>
-            {test.isPending ? "Checking..." : "Check rule"}
+            {test.isPending
+              ? t("policiesTab.simulator.checking", { defaultValue: "Checking..." })
+              : t("policiesTab.simulator.checkRule", { defaultValue: "Check rule" })}
           </Button>
 
           {result ? (
@@ -492,18 +523,18 @@ function PolicySimulator({
                 )}
               </div>
               <details className="text-xs text-muted-foreground">
-                <summary className="cursor-pointer text-foreground">Details</summary>
+                <summary className="cursor-pointer text-foreground">{t("policiesTab.simulator.details", { defaultValue: "Details" })}</summary>
                 <div className="mt-2 space-y-1 font-mono">
-                  <div>reason: {result.reasonCode}</div>
-                  <div>matched rule ids: {result.matchedPolicyIds.length ? result.matchedPolicyIds.join(", ") : "none"}</div>
-                  <div>effective profiles: {result.effectiveProfileIds.length ? result.effectiveProfileIds.join(", ") : "none"}</div>
+                  <div>{t("policiesTab.simulator.detailsReason", { defaultValue: "reason: " })}{result.reasonCode}</div>
+                  <div>{t("policiesTab.simulator.detailsMatchedRuleIds", { defaultValue: "matched rule ids: " })}{result.matchedPolicyIds.length ? result.matchedPolicyIds.join(", ") : t("policiesTab.simulator.none", { defaultValue: "none" })}</div>
+                  <div>{t("policiesTab.simulator.detailsEffectiveProfiles", { defaultValue: "effective profiles: " })}{result.effectiveProfileIds.length ? result.effectiveProfileIds.join(", ") : t("policiesTab.simulator.none", { defaultValue: "none" })}</div>
                 </div>
               </details>
             </div>
           ) : null}
         </div>
         <SheetFooter className="border-t border-border">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("policiesTab.actions.close", { defaultValue: "Close" })}</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -535,6 +566,7 @@ function RuleBuilder({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const { t } = useTranslation();
   const sentence = formSentence(form, maps, catalogByToolName);
   const selectedTools = new Set(parseList(form.toolNames));
   const setToolNames = (next: Set<string>) => setForm({ ...form, usesMode: "actions", toolNames: [...next].sort().join(", ") });
@@ -559,14 +591,20 @@ function RuleBuilder({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <Button variant="ghost" size="sm" className="px-0" onClick={onCancel}>
-            Back to rules
+            {t("policiesTab.actions.backToRules", { defaultValue: "Back to rules" })}
           </Button>
-          <h2 className="text-lg font-semibold text-foreground">{form.id ? "Edit rule" : "New rule"}</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            {form.id
+              ? t("policiesTab.actions.editRule", { defaultValue: "Edit rule" })
+              : t("policiesTab.actions.newRule", { defaultValue: "New rule" })}
+          </h2>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={onCancel}>{t("policiesTab.actions.cancel", { defaultValue: "Cancel" })}</Button>
           <Button size="sm" onClick={onSave} disabled={saving}>
-            {saving ? "Saving..." : "Save rule"}
+            {saving
+              ? t("policiesTab.actions.saving", { defaultValue: "Saving..." })
+              : t("policiesTab.actions.saveRule", { defaultValue: "Save rule" })}
           </Button>
         </div>
       </div>
@@ -577,12 +615,12 @@ function RuleBuilder({
 
       <div className="grid gap-4 lg:grid-cols-(--gtc-61)">
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">When</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("policiesTab.builder.whenHeading", { defaultValue: "When" })}</h3>
           <div className="grid gap-2">
             {[
-              ["everyone", "Everyone"],
-              ["agent", "Specific agent"],
-              ["project", "Agents in a project"],
+              ["everyone", t("policiesTab.when.everyone", { defaultValue: "Everyone" })],
+              ["agent", t("policiesTab.when.specificAgent", { defaultValue: "Specific agent" })],
+              ["project", t("policiesTab.when.agentsInProject", { defaultValue: "Agents in a project" })],
             ].map(([value, label]) => (
               <Button
                 key={value}
@@ -597,18 +635,18 @@ function RuleBuilder({
           </div>
           {form.whenMode === "agent" ? (
             <Select value={form.agentId} onValueChange={(agentId) => setForm({ ...form, agentId })}>
-              <SelectTrigger><SelectValue placeholder="Choose agent" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t("policiesTab.when.chooseAgent", { defaultValue: "Choose agent" })} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY_VALUE}>Choose agent</SelectItem>
+                <SelectItem value={ANY_VALUE}>{t("policiesTab.when.chooseAgent", { defaultValue: "Choose agent" })}</SelectItem>
                 {agents.map((agent) => <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>)}
               </SelectContent>
             </Select>
           ) : null}
           {form.whenMode === "project" ? (
             <Select value={form.projectId} onValueChange={(projectId) => setForm({ ...form, projectId })}>
-              <SelectTrigger><SelectValue placeholder="Choose project" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t("policiesTab.when.chooseProject", { defaultValue: "Choose project" })} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY_VALUE}>Choose project</SelectItem>
+                <SelectItem value={ANY_VALUE}>{t("policiesTab.when.chooseProject", { defaultValue: "Choose project" })}</SelectItem>
                 {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -616,13 +654,13 @@ function RuleBuilder({
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">Uses</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("policiesTab.builder.usesHeading", { defaultValue: "Uses" })}</h3>
           <div className="grid gap-2">
             {[
-              ["anything", "Anything"],
-              ["app", "A specific app"],
-              ["actions", "Specific actions"],
-              ["capability", "Actions by capability"],
+              ["anything", t("policiesTab.usesMode.anything", { defaultValue: "Anything" })],
+              ["app", t("policiesTab.usesMode.app", { defaultValue: "A specific app" })],
+              ["actions", t("policiesTab.usesMode.actions", { defaultValue: "Specific actions" })],
+              ["capability", t("policiesTab.usesMode.capability", { defaultValue: "Actions by capability" })],
             ].map(([value, label]) => (
               <Button
                 key={value}
@@ -637,20 +675,20 @@ function RuleBuilder({
           </div>
           {form.usesMode === "app" ? (
             <Select value={form.applicationId} onValueChange={(applicationId) => setForm({ ...form, applicationId })}>
-              <SelectTrigger><SelectValue placeholder="Choose app" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t("policiesTab.usesMode.chooseApp", { defaultValue: "Choose app" })} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY_VALUE}>Choose app</SelectItem>
+                <SelectItem value={ANY_VALUE}>{t("policiesTab.usesMode.chooseApp", { defaultValue: "Choose app" })}</SelectItem>
                 {applications.map((app) => <SelectItem key={app.id} value={app.id}>{app.name}</SelectItem>)}
               </SelectContent>
             </Select>
           ) : null}
           {form.usesMode === "capability" ? (
             <Select value={form.riskLevel} onValueChange={(riskLevel) => setForm({ ...form, riskLevel })}>
-              <SelectTrigger><SelectValue placeholder="Choose capability" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t("policiesTab.usesMode.chooseCapability", { defaultValue: "Choose capability" })} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY_VALUE}>Choose capability</SelectItem>
+                <SelectItem value={ANY_VALUE}>{t("policiesTab.usesMode.chooseCapability", { defaultValue: "Choose capability" })}</SelectItem>
                 {CAPABILITY_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  <SelectItem key={option.value} value={option.value}>{t(`policiesTab.capabilities.${option.value}`, { defaultValue: option.label })}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -658,7 +696,7 @@ function RuleBuilder({
           {form.usesMode === "actions" ? (
             <div className="max-h-80 overflow-y-auto rounded-md border border-border">
               {appGroups.length === 0 ? (
-                <div className="p-3 text-sm text-muted-foreground">No app actions discovered yet.</div>
+                <div className="p-3 text-sm text-muted-foreground">{t("policiesTab.usesMode.noActions", { defaultValue: "No app actions discovered yet." })}</div>
               ) : (
                 appGroups.map((group) => {
                   const selectedCount = group.tools.filter((tool) => selectedTools.has(tool.toolName)).length;
@@ -670,7 +708,7 @@ function RuleBuilder({
                           onCheckedChange={() => toggleGroup(group)}
                         />
                         <span className="flex-1">{group.name}</span>
-                        <span className="text-xs text-muted-foreground">{selectedCount} of {group.tools.length}</span>
+                        <span className="text-xs text-muted-foreground">{t("policiesTab.usesMode.selectedOfTotal", { defaultValue: "{{selected}} of {{total}}", selected: selectedCount, total: group.tools.length })}</span>
                       </label>
                       <div className="pb-2 pl-8 pr-3">
                         {group.tools.map((tool) => (
@@ -689,7 +727,7 @@ function RuleBuilder({
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">Then</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("policiesTab.builder.thenHeading", { defaultValue: "Then" })}</h3>
           <div className="grid gap-2">
             {OUTCOMES.map((outcome) => (
               <Button
@@ -699,24 +737,24 @@ function RuleBuilder({
                 className="justify-start"
                 onClick={() => setForm({ ...form, policyType: outcome.value })}
               >
-                {outcome.label}
+                {t(`policiesTab.outcomes.${outcome.value}`, { defaultValue: outcome.label })}
               </Button>
             ))}
           </div>
           {form.policyType === "rate_limit" ? (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
-                <Label htmlFor="limit-count">Times</Label>
+                <Label htmlFor="limit-count">{t("policiesTab.rateLimit.times", { defaultValue: "Times" })}</Label>
                 <Input id="limit-count" inputMode="numeric" value={form.rateLimitLimit} onChange={(e) => setForm({ ...form, rateLimitLimit: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label>Per</Label>
+                <Label>{t("policiesTab.rateLimit.per", { defaultValue: "Per" })}</Label>
                 <Select value={form.rateLimitWindowSeconds} onValueChange={(rateLimitWindowSeconds) => setForm({ ...form, rateLimitWindowSeconds })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="3600">Hour</SelectItem>
-                    <SelectItem value="86400">Day</SelectItem>
-                    <SelectItem value="60">Minute</SelectItem>
+                    <SelectItem value="3600">{t("policiesTab.rateLimit.hour", { defaultValue: "Hour" })}</SelectItem>
+                    <SelectItem value="86400">{t("policiesTab.rateLimit.day", { defaultValue: "Day" })}</SelectItem>
+                    <SelectItem value="60">{t("policiesTab.rateLimit.minute", { defaultValue: "Minute" })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -728,31 +766,31 @@ function RuleBuilder({
       <details className="rounded-md border border-border p-3">
         <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-foreground">
           <ChevronDown className="h-4 w-4" />
-          Advanced
+          {t("policiesTab.advanced.title", { defaultValue: "Advanced" })}
         </summary>
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="rule-name">Rule name</Label>
+            <Label htmlFor="rule-name">{t("policiesTab.advanced.ruleName", { defaultValue: "Rule name" })}</Label>
             <Input id="rule-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={sentenceText(sentence)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="rule-priority">Priority</Label>
+            <Label htmlFor="rule-priority">{t("policiesTab.advanced.priority", { defaultValue: "Priority" })}</Label>
             <Input id="rule-priority" inputMode="numeric" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} />
           </div>
           <div className="space-y-1.5">
-            <Label>Raw connection</Label>
+            <Label>{t("policiesTab.advanced.rawConnection", { defaultValue: "Raw connection" })}</Label>
             <Select value={form.connectionId} onValueChange={(connectionId) => setForm({ ...form, connectionId })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY_VALUE}>Any connection</SelectItem>
+                <SelectItem value={ANY_VALUE}>{t("policiesTab.advanced.anyConnection", { defaultValue: "Any connection" })}</SelectItem>
                 {[...maps.connection.entries()].map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2 lg:col-span-2">
             <div>
-              <p className="text-sm font-medium text-foreground">On</p>
-              <p className="text-xs text-muted-foreground">Turn this off to keep the rule saved without matching.</p>
+              <p className="text-sm font-medium text-foreground">{t("policiesTab.on", { defaultValue: "On" })}</p>
+              <p className="text-xs text-muted-foreground">{t("policiesTab.advanced.onDescription", { defaultValue: "Turn this off to keep the rule saved without matching." })}</p>
             </div>
             <ToggleSwitch checked={form.enabled} onCheckedChange={(enabled) => setForm({ ...form, enabled })} />
           </div>
@@ -763,20 +801,21 @@ function RuleBuilder({
 }
 
 function StarterCards({ onStart }: { onStart: (form: PolicyFormState) => void }) {
+  const { t } = useTranslation();
   const starters = [
     {
-      title: "Block destructive actions everywhere",
-      form: emptyPolicyForm({ policyType: "block", usesMode: "capability", riskLevel: "destructive", name: "Block destructive actions everywhere" }),
+      title: t("policiesTab.starters.blockDestructive", { defaultValue: "Block destructive actions everywhere" }),
+      form: emptyPolicyForm({ policyType: "block", usesMode: "capability", riskLevel: "destructive", name: t("policiesTab.starters.blockDestructive", { defaultValue: "Block destructive actions everywhere" }) }),
     },
     {
-      title: "Ask first before selected actions",
-      form: emptyPolicyForm({ policyType: "require_approval", usesMode: "actions", name: "Ask first before selected actions" }),
+      title: t("policiesTab.starters.askFirst", { defaultValue: "Ask first before selected actions" }),
+      form: emptyPolicyForm({ policyType: "require_approval", usesMode: "actions", name: t("policiesTab.starters.askFirst", { defaultValue: "Ask first before selected actions" }) }),
     },
     {
-      title: "Limit a noisy action",
-      form: emptyPolicyForm({ policyType: "rate_limit", usesMode: "actions", rateLimitLimit: "50", name: "Limit a noisy action" }),
+      title: t("policiesTab.starters.limitNoisy", { defaultValue: "Limit a noisy action" }),
+      form: emptyPolicyForm({ policyType: "rate_limit", usesMode: "actions", rateLimitLimit: "50", name: t("policiesTab.starters.limitNoisy", { defaultValue: "Limit a noisy action" }) }),
     },
-    { title: "Start from scratch", form: emptyPolicyForm() },
+    { title: t("policiesTab.starters.fromScratch", { defaultValue: "Start from scratch" }), form: emptyPolicyForm() },
   ];
   return (
     <div className="grid gap-2 sm:grid-cols-2">
@@ -795,6 +834,7 @@ function StarterCards({ onStart }: { onStart: (form: PolicyFormState) => void })
 }
 
 export function PoliciesTab({ companyId }: { companyId: string }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { pushToast } = useToast();
   const [form, setForm] = useState<PolicyFormState | null>(null);
@@ -881,9 +921,9 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
     onSuccess: () => {
       invalidatePolicies();
       setForm(null);
-      pushToast({ title: "Rule created", tone: "success" });
+      pushToast({ title: t("policiesTab.toasts.ruleCreated", { defaultValue: "Rule created" }), tone: "success" });
     },
-    onError: (err) => pushToast({ title: "Could not save rule", body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
+    onError: (err) => pushToast({ title: t("policiesTab.toasts.couldNotSave", { defaultValue: "Could not save rule" }), body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
   });
   const updatePolicy = useMutation({
     mutationFn: (input: { policyId: string; body: Partial<ReturnType<typeof buildPolicyPayload>> }) =>
@@ -891,43 +931,43 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
     onSuccess: () => {
       invalidatePolicies();
       setForm(null);
-      pushToast({ title: "Rule updated", tone: "success" });
+      pushToast({ title: t("policiesTab.toasts.ruleUpdated", { defaultValue: "Rule updated" }), tone: "success" });
     },
-    onError: (err) => pushToast({ title: "Could not save rule", body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
+    onError: (err) => pushToast({ title: t("policiesTab.toasts.couldNotSave", { defaultValue: "Could not save rule" }), body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
   });
   const reorder = useMutation({
     mutationFn: (policyIds: string[]) => toolsApi.reorderPolicies(companyId, { policyIds }),
     onSuccess: () => {
       invalidatePolicies();
-      pushToast({ title: "Rules reordered", tone: "success" });
+      pushToast({ title: t("policiesTab.toasts.rulesReordered", { defaultValue: "Rules reordered" }), tone: "success" });
     },
-    onError: (err) => pushToast({ title: "Could not reorder rules", body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
+    onError: (err) => pushToast({ title: t("policiesTab.toasts.couldNotReorder", { defaultValue: "Could not reorder rules" }), body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
   });
   const duplicate = useMutation({
     mutationFn: (policy: ToolPolicy) => toolsApi.duplicatePolicy(companyId, policy.id),
     onSuccess: () => {
       invalidatePolicies();
-      pushToast({ title: "Rule duplicated", body: "The copy is off until you turn it on.", tone: "success" });
+      pushToast({ title: t("policiesTab.toasts.ruleDuplicated", { defaultValue: "Rule duplicated" }), body: t("policiesTab.toasts.duplicatedBody", { defaultValue: "The copy is off until you turn it on." }), tone: "success" });
     },
-    onError: (err) => pushToast({ title: "Duplicate failed", body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
+    onError: (err) => pushToast({ title: t("policiesTab.toasts.duplicateFailed", { defaultValue: "Duplicate failed" }), body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
   });
   const deletePolicy = useMutation({
     mutationFn: (policyId: string) => toolsApi.deletePolicy(companyId, policyId),
     onSuccess: () => {
       invalidatePolicies();
       setConfirm(null);
-      pushToast({ title: "Rule deleted", tone: "success" });
+      pushToast({ title: t("policiesTab.toasts.ruleDeleted", { defaultValue: "Rule deleted" }), tone: "success" });
     },
-    onError: (err) => pushToast({ title: "Delete failed", body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
+    onError: (err) => pushToast({ title: t("policiesTab.toasts.deleteFailed", { defaultValue: "Delete failed" }), body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
   });
   const revoke = useMutation({
     mutationFn: (policyId: string) => toolsApi.revokeTrustRule(companyId, policyId),
     onSuccess: () => {
       invalidateTrustRules();
       setConfirm(null);
-      pushToast({ title: "Remembered approval forgotten", tone: "success" });
+      pushToast({ title: t("policiesTab.toasts.approvalForgotten", { defaultValue: "Remembered approval forgotten" }), tone: "success" });
     },
-    onError: (err) => pushToast({ title: "Forget failed", body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
+    onError: (err) => pushToast({ title: t("policiesTab.toasts.forgetFailed", { defaultValue: "Forget failed" }), body: err instanceof ApiError ? err.message : String(err), tone: "error" }),
   });
 
   function submitPolicy() {
@@ -938,7 +978,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
       if (form.id) updatePolicy.mutate({ policyId: form.id, body });
       else createPolicy.mutate(body);
     } catch (err) {
-      pushToast({ title: "Invalid rule", body: err instanceof Error ? err.message : String(err), tone: "error" });
+      pushToast({ title: t("policiesTab.toasts.invalidRule", { defaultValue: "Invalid rule" }), body: err instanceof Error ? err.message : String(err), tone: "error" });
     }
   }
 
@@ -982,17 +1022,17 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
   return (
     <div className="space-y-5">
       <ToolsPageHeader
-        title="Rules"
-        description="Rules are checked top to bottom — the first one that matches decides."
+        title={t("policiesTab.header.title", { defaultValue: "Rules" })}
+        description={t("policiesTab.header.description", { defaultValue: "Rules are checked top to bottom — the first one that matches decides." })}
         actions={
           <>
             <Button size="sm" variant="outline" onClick={() => setTestOpen(true)}>
               <FlaskConical className="mr-1 h-4 w-4" />
-              Test a rule
+              {t("policiesTab.actions.testRule", { defaultValue: "Test a rule" })}
             </Button>
             <Button size="sm" onClick={() => setForm(emptyPolicyForm())}>
               <Plus className="mr-1 h-4 w-4" />
-              New rule
+              {t("policiesTab.actions.newRule", { defaultValue: "New rule" })}
             </Button>
           </>
         }
@@ -1007,9 +1047,9 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
           <div className="space-y-3">
             <EmptyState
               icon={Shield}
-              message="No rules yet"
-              description="Start with a template or create a rule from scratch."
-              action="New rule"
+              message={t("policiesTab.empty.message", { defaultValue: "No rules yet" })}
+              description={t("policiesTab.empty.description", { defaultValue: "Start with a template or create a rule from scratch." })}
+              action={t("policiesTab.actions.newRule", { defaultValue: "New rule" })}
               onAction={() => setForm(emptyPolicyForm())}
             />
             <StarterCards onStart={setForm} />
@@ -1021,10 +1061,10 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
                     <th className="w-8 px-2 py-2.5 font-medium" />
-                    <th className="px-2 py-2.5 font-medium">Rule</th>
-                    <th className="px-2 py-2.5 font-medium">Outcome</th>
-                    <th className="px-2 py-2.5 text-right font-medium">Last 24h</th>
-                    <th className="px-2 py-2.5 text-center font-medium">On</th>
+                    <th className="px-2 py-2.5 font-medium">{t("policiesTab.table.rule", { defaultValue: "Rule" })}</th>
+                    <th className="px-2 py-2.5 font-medium">{t("policiesTab.table.outcome", { defaultValue: "Outcome" })}</th>
+                    <th className="px-2 py-2.5 text-right font-medium">{t("policiesTab.table.last24h", { defaultValue: "Last 24h" })}</th>
+                    <th className="px-2 py-2.5 text-center font-medium">{t("policiesTab.on", { defaultValue: "On" })}</th>
                     <th className="w-10 px-2 py-2.5 text-right font-medium" />
                   </tr>
                 </thead>
@@ -1060,7 +1100,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
                           ) : null}
                         </td>
                         <td className="px-2 py-2"><OutcomeChip type={policy.policyType} config={policy.config} /></td>
-                        <td className="px-2 py-2 text-right text-xs text-muted-foreground">{hits} {hits === 1 ? "time" : "times"}</td>
+                        <td className="px-2 py-2 text-right text-xs text-muted-foreground">{hits} {hits === 1 ? t("policiesTab.units.timeOne", { defaultValue: "time" }) : t("policiesTab.units.timeOther", { defaultValue: "times" })}</td>
                         <td className="px-2 py-2 text-center">
                           <ToggleSwitch
                             checked={policy.enabled}
@@ -1071,22 +1111,22 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
                         <td className="px-2 py-2 text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost" aria-label="Rule actions">
+                              <Button size="icon" variant="ghost" aria-label={t("policiesTab.actions.ruleActions", { defaultValue: "Rule actions" })}>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => setForm(policyToForm(policy))}>
                                 <Pencil className="mr-2 h-4 w-4" />
-                                Edit
+                                {t("policiesTab.actions.edit", { defaultValue: "Edit" })}
                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => duplicate.mutate(policy)}>
                                 <Copy className="mr-2 h-4 w-4" />
-                                Duplicate
+                                {t("policiesTab.actions.duplicate", { defaultValue: "Duplicate" })}
                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => updatePolicy.mutate({ policyId: policy.id, body: { enabled: false } })}>
                                 <RotateCcw className="mr-2 h-4 w-4" />
-                                Turn off
+                                {t("policiesTab.actions.turnOff", { defaultValue: "Turn off" })}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -1094,7 +1134,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
                                 onSelect={() => setConfirm({ kind: "delete-rule", policy, hits })}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
+                                {t("policiesTab.actions.delete", { defaultValue: "Delete" })}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1110,15 +1150,15 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-foreground">Remembered approvals</h3>
-        <p className="text-sm text-muted-foreground">When you approve an Ask-first request, Paperclip can remember the decision.</p>
+        <h3 className="text-sm font-semibold text-foreground">{t("policiesTab.remembered.heading", { defaultValue: "Remembered approvals" })}</h3>
+        <p className="text-sm text-muted-foreground">{t("policiesTab.remembered.description", { defaultValue: "When you approve an Ask-first request, Paperclip can remember the decision." })}</p>
         {trustRules.isLoading ? (
           <LoadingState />
         ) : trustRules.error ? (
           <ErrorState error={trustRules.error} onRetry={() => trustRules.refetch()} />
         ) : (trustRules.data?.trustRules ?? []).length === 0 ? (
           <div className="rounded-md border border-border px-4 py-6 text-sm text-muted-foreground">
-            No remembered approvals yet.
+            {t("policiesTab.remembered.empty", { defaultValue: "No remembered approvals yet." })}
           </div>
         ) : (
           <div className="divide-y divide-border rounded-md border border-border">
@@ -1129,7 +1169,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
                     <RuleSentence sentence={policySentence(rule, maps, catalogByToolName)} />
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Remembered <RelativeTime value={rule.updatedAt} />
+                    {t("policiesTab.remembered.rememberedAt", { defaultValue: "Remembered " })}<RelativeTime value={rule.updatedAt} />
                   </div>
                 </div>
                 <Button
@@ -1138,7 +1178,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
                   disabled={!rule.enabled || revoke.isPending}
                   onClick={() => setConfirm({ kind: "forget-approval", policy: rule })}
                 >
-                  Forget
+                  {t("policiesTab.actions.forget", { defaultValue: "Forget" })}
                 </Button>
               </div>
             ))}
@@ -1164,15 +1204,21 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
         {confirm ? (
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{confirm.kind === "delete-rule" ? "Delete rule?" : "Forget remembered approval?"}</DialogTitle>
+              <DialogTitle>{confirm.kind === "delete-rule" ? t("policiesTab.confirm.deleteTitle", { defaultValue: "Delete rule?" }) : t("policiesTab.confirm.forgetTitle", { defaultValue: "Forget remembered approval?" })}</DialogTitle>
               <DialogDescription>
                 {confirm.kind === "delete-rule"
-                  ? `This rule matched ${confirm.hits} ${confirm.hits === 1 ? "time" : "times"} in the last 24 hours. Deleting it may change what agents can do.`
-                  : "Paperclip will ask again the next time this action needs approval."}
+                  ? t("policiesTab.confirm.deleteBody", {
+                      defaultValue: "This rule matched {{count}} {{unit}} in the last 24 hours. Deleting it may change what agents can do.",
+                      count: confirm.hits,
+                      unit: confirm.hits === 1
+                        ? t("policiesTab.units.timeOne", { defaultValue: "time" })
+                        : t("policiesTab.units.timeOther", { defaultValue: "times" }),
+                    })
+                  : t("policiesTab.confirm.forgetBody", { defaultValue: "Paperclip will ask again the next time this action needs approval." })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirm(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setConfirm(null)}>{t("policiesTab.actions.cancel", { defaultValue: "Cancel" })}</Button>
               <Button
                 variant="destructive"
                 disabled={deletePolicy.isPending || revoke.isPending}
@@ -1181,7 +1227,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
                   else revoke.mutate(confirm.policy.id);
                 }}
               >
-                {confirm.kind === "delete-rule" ? "Delete" : "Forget"}
+                {confirm.kind === "delete-rule" ? t("policiesTab.actions.delete", { defaultValue: "Delete" }) : t("policiesTab.actions.forget", { defaultValue: "Forget" })}
               </Button>
             </DialogFooter>
           </DialogContent>

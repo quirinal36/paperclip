@@ -4,6 +4,7 @@ import type { Issue } from "@paperclipai/shared";
 
 import { Button } from "@/components/ui/button";
 import { InlineBanner } from "@/components/InlineBanner";
+import { t, useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
   deriveMonitorState,
@@ -76,26 +77,42 @@ export function buildMonitorSurfaceCopy(
   switch (derived.state) {
     case "scheduled":
     case "retrying":
-      bannerTitle = isScheduledRetryOnly ? `Agent resumes ${eta}` : `Waiting on monitor — resumes ${eta}`;
-      stripTitle = `Resumes ${eta}`;
+      bannerTitle = isScheduledRetryOnly
+        ? t("issueMonitorBanner.agentResumes", { defaultValue: "Agent resumes {{eta}}", eta })
+        : t("issueMonitorBanner.waitingResumes", { defaultValue: "Waiting on monitor — resumes {{eta}}", eta });
+      stripTitle = t("issueMonitorBanner.strip.resumes", { defaultValue: "Resumes {{eta}}", eta });
       break;
     case "due-now":
-      bannerTitle = isScheduledRetryOnly ? "Agent retry due now" : "Waiting on monitor — due now";
-      stripTitle = "Due now";
-      statusHint = "Checking momentarily…";
+      bannerTitle = isScheduledRetryOnly
+        ? t("issueMonitorBanner.agentRetryDueNow", { defaultValue: "Agent retry due now" })
+        : t("issueMonitorBanner.waitingDueNow", { defaultValue: "Waiting on monitor — due now" });
+      stripTitle = t("issueMonitorBanner.strip.dueNow", { defaultValue: "Due now" });
+      statusHint = t("issueMonitorBanner.checkingMomentarily", { defaultValue: "Checking momentarily…" });
       break;
     case "overdue":
     default:
-      bannerTitle = isScheduledRetryOnly ? `Agent retry ${eta}` : `Waiting on monitor — ${eta}`;
+      bannerTitle = isScheduledRetryOnly
+        ? t("issueMonitorBanner.agentRetryEta", { defaultValue: "Agent retry {{eta}}", eta })
+        : t("issueMonitorBanner.waitingEta", { defaultValue: "Waiting on monitor — {{eta}}", eta });
       stripTitle = capitalize(eta);
-      statusHint = "Fires on next tick";
+      statusHint = t("issueMonitorBanner.firesOnNextTick", { defaultValue: "Fires on next tick" });
       break;
   }
 
-  const attemptLabel = derived.attemptCount >= 1 ? `Attempt ${derived.attemptCount}` : null;
-  const serviceLabel = derived.serviceName ? `Watching: ${derived.serviceName}` : null;
+  const attemptLabel =
+    derived.attemptCount >= 1
+      ? t("issueMonitorBanner.attempt", { defaultValue: "Attempt {{count}}", count: derived.attemptCount })
+      : null;
+  const serviceLabel = derived.serviceName
+    ? t("issueMonitorBanner.watching", { defaultValue: "Watching: {{serviceName}}", serviceName: derived.serviceName })
+    : null;
 
-  const bannerMeta = [statusHint, `${absolute} (your time)`, attemptLabel, serviceLabel].filter(
+  const bannerMeta = [
+    statusHint,
+    t("issueMonitorBanner.absoluteYourTime", { defaultValue: "{{absolute}} (your time)", absolute }),
+    attemptLabel,
+    serviceLabel,
+  ].filter(
     (piece): piece is string => Boolean(piece),
   );
   const stripMeta = [statusHint, absolute, attemptLabel, serviceLabel].filter(
@@ -127,6 +144,7 @@ function CheckNowButton({
   onCheckNow: () => void;
   checkingNow: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <Button
       type="button"
@@ -136,7 +154,9 @@ function CheckNowButton({
       onClick={onCheckNow}
       disabled={checkingNow}
     >
-      {checkingNow ? "Checking…" : "Check now"}
+      {checkingNow
+        ? t("issueMonitorBanner.actions.checking", { defaultValue: "Checking…" })
+        : t("issueMonitorBanner.actions.checkNow", { defaultValue: "Check now" })}
     </Button>
   );
 }
@@ -184,6 +204,7 @@ export function IssueMonitorComposerStrip({
   checkingNow = false,
   className,
 }: IssueMonitorSurfaceProps & { className?: string }) {
+  const { t } = useTranslation();
   const copy = useMonitorSurfaceCopy(issue);
   if (!copy) return null;
 
@@ -204,7 +225,9 @@ export function IssueMonitorComposerStrip({
         {onCheckNow ? <CheckNowButton onCheckNow={onCheckNow} checkingNow={checkingNow} /> : null}
       </div>
       <p className="mt-1.5 text-xs text-muted-foreground">
-        Sending a reply wakes the agent now — before the scheduled check.
+        {t("issueMonitorBanner.composer.replyWakesAgent", {
+          defaultValue: "Sending a reply wakes the agent now — before the scheduled check.",
+        })}
       </p>
     </div>
   );

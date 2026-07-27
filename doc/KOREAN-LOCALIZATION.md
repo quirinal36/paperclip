@@ -28,13 +28,25 @@
 - **완료:**
   - 로그인·회원가입 화면(`/auth`). 키 네임스페이스 `auth.*` + 전역 `language.*`.
   - **계정 메뉴**(`SidebarAccountMenu`) 전체 — `account.*`. 테마 토글(`theme.*`)·언어 스위처 행 포함.
+  - **`ui/src/pages` + `ui/src/components` 전면 한글화 (2026-07-26 일괄 스윕).**
+    사용자 문자열이 있는 **341개 파일**을 `t()`로 감싸고 en/ko 양쪽에 키를 넣었다.
+    en/ko 각 **~11.4k 리프 키**(완벽 미러). 파일마다 파일명 기반 **고유 최상위 네임스페이스**를 씀
+    (예: `issueDetail.*`, `pipelines.*`, `companyAccess.*`). 검증: `tsc -b` 0 에러,
+    로케일 검증 통과, 전체 vitest 회귀 0(잔여 실패는 날짜 의존/환경성 기존 실패로 확인).
 - **기반 인프라(완료):**
   - 언어 저장(localStorage) + 브라우저 언어 감지 + 영어 폴백
   - 언어 전환 UI(`LanguageSwitcher`) — `icon` 변형(`/auth` 우측 상단) + `menu-action` 변형(계정 메뉴).
     **로그인 이후에도 계정 메뉴에서 언어 전환 가능.**
   - 로케일 검증기 완화(누락 키 허용) → 화면 단위 점진 번역 가능
-- **아직 안 된 것:** `/auth`·계정 메뉴 외 대부분 화면은 영어 하드코딩(사이드바 내비, 회사 생성/설정,
-  이슈/대시보드/인박스 등).
+- **아직 안 된 것:** `ui/src` 밖의 표면 — `lib/`·`hooks/`·`context/`의 비컴포넌트 문자열,
+  `components/ui/` shadcn 프리미티브 중 문자열 없던 것들, 그리고 이후 upstream이 새로 추가하는 화면.
+  일괄 스윕 이후 새로 생기는 하드코딩 문자열은 아래 30초 레시피로 화면 단위 처리.
+
+> **일괄 스윕은 어떻게 했나 (재현/후속용):** 파일별 서브에이전트 파이프라인(transform → review-fix)으로
+> 각 파일을 `t()` 래핑하고 `{namespace, en, ko}` 프래그먼트를 냈다. 공유 파일 충돌을 피하려 에이전트는
+> `en.json`/`ko.json`을 직접 쓰지 않고 **파일별 고유 네임스페이스 프래그먼트**만 내보냈고, 그걸
+> 중앙에서 결정적으로 병합했다. 엄격한 래핑 규칙(className/enum/route/id/testid 등은 절대 제외)과
+> 도메인 용어집으로 오래핑·용어 흔들림을 억제했다.
 
 upstream 원본은 i18n **골격만** 있었다(빈 40개 언어 파일 + `app.noCompanies` 한 화면, 스위처 없음,
 `lng` 고정). 우리가 그 위에 실제 한글화를 얹는 중이다.
@@ -209,16 +221,19 @@ pnpm exec vitest run src/i18n/locale-validation.test.ts src/pages/대상.test.ts
 
 ---
 
-## 8. 다음 후보 화면 (우선순위 제안)
+## 8. 남은 후보 (일괄 스윕 이후)
 
-로그인 직후 눈에 띄는 순서로:
+`pages` + `components`는 2026-07-26 일괄 스윕으로 대부분 끝났다. 남은 것과 후속 관리:
 
-1. **온보딩/빈 상태** — `app.noCompanies`(일부 됨) 확장, [ui/src/components/EmptyState.tsx](../ui/src/components/EmptyState.tsx)
-2. **전역 셸** — 사이드바/내비게이션. (계정 메뉴 + 언어 스위처 장착은 ✅ 완료.)
-3. **회사 생성/설정** — [pages/Companies.tsx](../ui/src/pages/Companies.tsx), [pages/CompanySettings.tsx](../ui/src/pages/CompanySettings.tsx)
-4. **핵심 작업 화면** — [pages/Issues.tsx](../ui/src/pages/Issues.tsx), [pages/IssueDetail.tsx](../ui/src/pages/IssueDetail.tsx), [pages/Dashboard.tsx](../ui/src/pages/Dashboard.tsx), [pages/Inbox.tsx](../ui/src/pages/Inbox.tsx)
+1. **`ui/src` 밖 비컴포넌트 문자열** — `lib/`·`hooks/`·`context/`에서 사용자에게 보이는 문자열
+   (에러 메시지 유틸 등). 컴포넌트가 아니므로 `import { t } from "@/i18n";` 형태로 처리.
+2. **번역 다듬기(QA)** — 일괄 스윕 번역은 화면 문맥 없이 파일 단위로 생성됐으므로, 실제 화면을 보며
+   어색한 표현/용어 흔들림을 다듬는 것이 다음 가치. 각 파일의 네임스페이스(`<파일명camelCase>.*`)로
+   `ko.json`에서 바로 찾을 수 있다.
+3. **upstream 신규 화면** — 동기화로 새로 들어온 하드코딩 문자열은 아래 30초 레시피로 화면 단위 처리.
 
-> 한 번에 한 화면씩. 각 화면은 en+ko 두 파일 + 컴포넌트 하나(대개)만 바뀌므로 리뷰가 쉽다.
+> 신규/후속 작업은 여전히 **한 번에 한 화면씩**. 각 화면은 en+ko 두 파일 + 컴포넌트 하나(대개)만
+> 바뀌므로 리뷰가 쉽다.
 
 ---
 

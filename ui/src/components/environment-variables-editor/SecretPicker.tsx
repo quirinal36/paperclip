@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { normalizeSearchText } from "@/lib/searchable-select";
 import { cn } from "@/lib/utils";
+import { t, useTranslation } from "@/i18n";
 
 interface SecretOption extends SearchableSelectOption {
   kind?: "secret" | "folder" | "back";
@@ -107,7 +108,7 @@ function buildFolderGroup(
     options.push({
       key: `folder-up-${pathKey(currentPath)}`,
       value: folderValue(parentPath),
-      label: "Up one folder",
+      label: t("secretPicker.browse.upOneFolder", { defaultValue: "Up one folder" }),
       title: pathLabel(parentPath),
       searchText: pathLabel(parentPath),
       kind: "back",
@@ -119,7 +120,7 @@ function buildFolderGroup(
 
   return {
     id: "browse-secrets",
-    label: currentPath.length > 0 ? pathLabel(currentPath) : "Browse secrets",
+    label: currentPath.length > 0 ? pathLabel(currentPath) : t("secretPicker.browse.title", { defaultValue: "Browse secrets" }),
     options,
   };
 }
@@ -154,6 +155,7 @@ export function SecretPicker({
   triggerClassName,
   disablePortal,
 }: SecretPickerProps) {
+  const { t } = useTranslation();
   const [currentPathKey, setCurrentPathKey] = useState("");
   const boundSecret = useMemo(
     () => secrets.find((secret) => secret.id === secretId) ?? null,
@@ -171,13 +173,13 @@ export function SecretPicker({
     if (boundMissing) {
       result.push({
         id: "current-missing",
-        label: "Current",
+        label: t("secretPicker.groups.current", { defaultValue: "Current" }),
         options: [
           {
             key: `missing-${secretId}`,
             value: secretId,
-            label: `Missing secret (${secretId.slice(0, 8)}…)`,
-            title: `Missing secret (${secretId})`,
+            label: t("secretPicker.missing.label", { defaultValue: "Missing secret ({{id}}…)", id: secretId.slice(0, 8) }),
+            title: t("secretPicker.missing.title", { defaultValue: "Missing secret ({{id}})", id: secretId }),
             missing: true,
             disabled: true,
           },
@@ -191,7 +193,7 @@ export function SecretPicker({
     if (recent.length > 0) {
       result.push({
         id: "recently-used",
-        label: "Recently used",
+        label: t("secretPicker.groups.recentlyUsed", { defaultValue: "Recently used" }),
         options: recent.map((secret) => ({
           key: `recent-${secret.id}`,
           value: secret.id,
@@ -207,7 +209,7 @@ export function SecretPicker({
 
     result.push({
       id: "all-secrets",
-      label: recent.length > 0 ? "All secrets" : undefined,
+      label: recent.length > 0 ? t("secretPicker.groups.allSecrets", { defaultValue: "All secrets" }) : undefined,
       options: secrets.map((secret) => ({
         key: `all-${secret.id}`,
         value: secret.id,
@@ -253,9 +255,9 @@ export function SecretPicker({
       deriveGroups={deriveGroups}
       disabled={disabled}
       disablePortal={disablePortal}
-      placeholder="Select secret…"
-      searchPlaceholder="Search secrets…"
-      emptyMessage="No matching secrets"
+      placeholder={t("secretPicker.placeholder.select", { defaultValue: "Select secret…" })}
+      searchPlaceholder={t("secretPicker.placeholder.search", { defaultValue: "Search secrets…" })}
+      emptyMessage={t("secretPicker.empty", { defaultValue: "No matching secrets" })}
       triggerClassName={cn(
         "h-(--sz-34px) min-h-(--sz-34px) font-mono text-sm",
         boundMissing && "border-destructive text-destructive",
@@ -264,7 +266,7 @@ export function SecretPicker({
       )}
       renderValue={(option) => {
         if (!option) {
-          return <span className="text-muted-foreground">Select secret…</span>;
+          return <span className="text-muted-foreground">{t("secretPicker.placeholder.select", { defaultValue: "Select secret…" })}</span>;
         }
         if (option.missing) {
           return (
@@ -323,10 +325,10 @@ export function SecretPicker({
             <Plus className="size-3.5 shrink-0" />
             {query.trim() ? (
               <span>
-                Create secret <span className="font-mono">&ldquo;{query.trim()}&rdquo;</span>…
+                {t("secretPicker.createItem.prefix", { defaultValue: "Create secret " })}<span className="font-mono">&ldquo;{query.trim()}&rdquo;</span>…
               </span>
             ) : (
-              <span>Create new secret…</span>
+              <span>{t("secretPicker.createItem.new", { defaultValue: "Create new secret…" })}</span>
             )}
           </span>
         ),

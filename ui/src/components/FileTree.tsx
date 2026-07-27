@@ -13,6 +13,7 @@ import { statusBadge, statusBadgeDefault } from "../lib/status-colors";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation, t } from "@/i18n";
 
 // -- Tree types --------------------------------------------------------------
 
@@ -217,18 +218,18 @@ export function parseFrontmatter(content: string): { data: FrontmatterData; body
 }
 
 export const FRONTMATTER_FIELD_LABELS: Record<string, string> = {
-  name: "Name",
-  title: "Title",
-  kind: "Kind",
-  reportsTo: "Reports to",
-  skills: "Skills",
-  status: "Status",
-  description: "Description",
-  priority: "Priority",
-  assignee: "Responsible",
-  project: "Project",
-  recurring: "Recurring",
-  targetDate: "Target date",
+  name: t("fileTree.frontmatter.name", { defaultValue: "Name" }),
+  title: t("fileTree.frontmatter.title", { defaultValue: "Title" }),
+  kind: t("fileTree.frontmatter.kind", { defaultValue: "Kind" }),
+  reportsTo: t("fileTree.frontmatter.reportsTo", { defaultValue: "Reports to" }),
+  skills: t("fileTree.frontmatter.skills", { defaultValue: "Skills" }),
+  status: t("fileTree.frontmatter.status", { defaultValue: "Status" }),
+  description: t("fileTree.frontmatter.description", { defaultValue: "Description" }),
+  priority: t("fileTree.frontmatter.priority", { defaultValue: "Priority" }),
+  assignee: t("fileTree.frontmatter.assignee", { defaultValue: "Responsible" }),
+  project: t("fileTree.frontmatter.project", { defaultValue: "Project" }),
+  recurring: t("fileTree.frontmatter.recurring", { defaultValue: "Recurring" }),
+  targetDate: t("fileTree.frontmatter.targetDate", { defaultValue: "Target date" }),
 };
 
 // -- File tree component -----------------------------------------------------
@@ -275,8 +276,9 @@ export function FileTree({
   loading = false,
   error,
   empty,
-  ariaLabel = "Files",
+  ariaLabel = t("fileTree.aria.files", { defaultValue: "Files" }),
 }: FileTreeProps) {
+  const { t } = useTranslation();
   const effectiveCheckedFiles = checkedFiles ?? new Set<string>();
   const visibleNodes = useMemo(
     () => flattenVisibleNodes(nodes, expandedDirs),
@@ -364,13 +366,13 @@ export function FileTree({
                 statusBadge.error ?? statusBadgeDefault,
               )}
             >
-              error
+              {t("fileTree.error.badge", { defaultValue: "error" })}
             </Badge>
             <span className="min-w-0 text-destructive">{error.message}</span>
           </div>
           {error.retry && (
             <Button type="button" size="xs" variant="outline" onClick={error.retry}>
-              Retry
+              {t("fileTree.actions.retry", { defaultValue: "Retry" })}
             </Button>
           )}
         </div>
@@ -382,9 +384,14 @@ export function FileTree({
     return (
       <div aria-label={ariaLabel} role="tree" className="p-3">
         <div className="rounded-md border border-dashed border-border px-4 py-8 text-center">
-          <div className="text-sm font-medium">{empty?.title ?? "No files"}</div>
+          <div className="text-sm font-medium">
+            {empty?.title ?? t("fileTree.empty.title", { defaultValue: "No files" })}
+          </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {empty?.description ?? "Files will appear here when they are available."}
+            {empty?.description ??
+              t("fileTree.empty.description", {
+                defaultValue: "Files will appear here when they are available.",
+              })}
           </div>
         </div>
       </div>
@@ -484,7 +491,11 @@ export function FileTree({
                   event.stopPropagation();
                   onToggleDir(node.path);
                 }}
-                aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
+                aria-label={
+                  expanded
+                    ? t("fileTree.aria.collapse", { defaultValue: "Collapse {{name}}", name: node.name })
+                    : t("fileTree.aria.expand", { defaultValue: "Expand {{name}}", name: node.name })
+                }
               >
                 {expanded ? (
                   <ChevronDown className="h-3.5 w-3.5" />

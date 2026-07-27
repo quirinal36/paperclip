@@ -4,6 +4,7 @@ import { cn } from "../lib/utils";
 import { StatusGlyph, type StatusGlyphSize } from "./StatusGlyph";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { t } from "@/i18n";
 
 const allStatuses = ["backlog", "todo", "in_progress", "in_review", "done", "cancelled", "blocked"];
 
@@ -22,45 +23,91 @@ interface StatusIconProps {
 }
 
 function blockedAttentionLabel(blockerAttention: IssueBlockerAttention | null | undefined) {
-  if (!blockerAttention || blockerAttention.state === "none") return "Blocked";
+  if (!blockerAttention || blockerAttention.state === "none")
+    return t("statusIcon.blocked.label", { defaultValue: "Blocked" });
 
   if (blockerAttention.reason === "active_child") {
     const count = blockerAttention.coveredBlockerCount;
     if (count === 1 && blockerAttention.sampleBlockerIdentifier) {
-      return `Blocked · waiting on active sub-task ${blockerAttention.sampleBlockerIdentifier}`;
+      return t("statusIcon.blocked.waitingOnActiveSubTask", {
+        defaultValue: "Blocked · waiting on active sub-task {{identifier}}",
+        identifier: blockerAttention.sampleBlockerIdentifier,
+      });
     }
-    if (count === 1) return "Blocked · waiting on 1 active sub-task";
-    return `Blocked · waiting on ${count} active sub-tasks`;
+    if (count === 1)
+      return t("statusIcon.blocked.waitingOnOneActiveSubTask", {
+        defaultValue: "Blocked · waiting on 1 active sub-task",
+      });
+    return t("statusIcon.blocked.waitingOnActiveSubTasks", {
+      defaultValue: "Blocked · waiting on {{num}} active sub-tasks",
+      num: count,
+    });
   }
 
   if (blockerAttention.reason === "active_dependency") {
     const count = blockerAttention.coveredBlockerCount;
     if (count === 1 && blockerAttention.sampleBlockerIdentifier) {
-      return `Blocked · covered by active dependency ${blockerAttention.sampleBlockerIdentifier}`;
+      return t("statusIcon.blocked.coveredByActiveDependency", {
+        defaultValue: "Blocked · covered by active dependency {{identifier}}",
+        identifier: blockerAttention.sampleBlockerIdentifier,
+      });
     }
-    if (count === 1) return "Blocked · covered by 1 active dependency";
-    return `Blocked · covered by ${count} active dependencies`;
+    if (count === 1)
+      return t("statusIcon.blocked.coveredByOneActiveDependency", {
+        defaultValue: "Blocked · covered by 1 active dependency",
+      });
+    return t("statusIcon.blocked.coveredByActiveDependencies", {
+      defaultValue: "Blocked · covered by {{num}} active dependencies",
+      num: count,
+    });
   }
 
   if (blockerAttention.reason === "stalled_review") {
     const count = blockerAttention.stalledBlockerCount;
     const leaf = blockerAttention.sampleStalledBlockerIdentifier ?? blockerAttention.sampleBlockerIdentifier;
-    if (count === 1 && leaf) return `Blocked · review stalled on ${leaf}`;
-    if (count === 1) return "Blocked · review stalled with no clear next step";
-    return `Blocked · ${count} reviews stalled with no clear next step`;
+    if (count === 1 && leaf)
+      return t("statusIcon.blocked.reviewStalledOn", {
+        defaultValue: "Blocked · review stalled on {{identifier}}",
+        identifier: leaf,
+      });
+    if (count === 1)
+      return t("statusIcon.blocked.reviewStalledNoNextStep", {
+        defaultValue: "Blocked · review stalled with no clear next step",
+      });
+    return t("statusIcon.blocked.reviewsStalledNoNextStep", {
+      defaultValue: "Blocked · {{num}} reviews stalled with no clear next step",
+      num: count,
+    });
   }
 
   if (blockerAttention.reason === "attention_required") {
     const count = blockerAttention.attentionBlockerCount || blockerAttention.unresolvedBlockerCount;
-    const attentionCopy = `${count} ${count === 1 ? "blocker needs" : "blockers need"} attention`;
     const coveredCount = blockerAttention.coveredBlockerCount;
-    if (coveredCount > 0) {
-      return `Blocked · ${attentionCopy}; ${coveredCount} covered by active work`;
+    if (count === 1) {
+      if (coveredCount > 0) {
+        return t("statusIcon.blocked.attentionRequiredOneCovered", {
+          defaultValue: "Blocked · 1 blocker needs attention; {{covered}} covered by active work",
+          covered: coveredCount,
+        });
+      }
+      return t("statusIcon.blocked.attentionRequiredOne", {
+        defaultValue: "Blocked · 1 blocker needs attention",
+      });
     }
-    return `Blocked · ${attentionCopy}`;
+    if (coveredCount > 0) {
+      return t("statusIcon.blocked.attentionRequiredManyCovered", {
+        defaultValue: "Blocked · {{num}} blockers need attention; {{covered}} covered by active work",
+        num: count,
+        covered: coveredCount,
+      });
+    }
+    return t("statusIcon.blocked.attentionRequiredMany", {
+      defaultValue: "Blocked · {{num}} blockers need attention",
+      num: count,
+    });
   }
 
-  return "Blocked";
+  return t("statusIcon.blocked.label", { defaultValue: "Blocked" });
 }
 
 /**

@@ -14,6 +14,7 @@ import {
 import { X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { StatusIcon } from "../StatusIcon";
+import { useTranslation } from "@/i18n";
 
 export function RemovableIssueReferencePill({
   issue,
@@ -22,6 +23,7 @@ export function RemovableIssueReferencePill({
   issue: NonNullable<Issue["blockedBy"]>[number];
   onRemove: (issueId: string) => void;
 }) {
+  const { t } = useTranslation();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const issueLabel = issue.identifier ?? issue.title;
   const confirmLabel = issue.identifier ? `${issue.identifier}: ${issue.title}` : issue.title;
@@ -36,7 +38,10 @@ export function RemovableIssueReferencePill({
       <span className="truncate">{issueLabel}</span>
     </>
   );
-  const removeLabel = `Remove ${issueLabel} as blocker`;
+  const removeLabel = t("relationControls.removePill.removeLabel", {
+    defaultValue: "Remove {{label}} as blocker",
+    label: issueLabel,
+  });
   const handleRemove = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -65,7 +70,11 @@ export function RemovableIssueReferencePill({
             data-mention-kind="issue"
             className={chipClassName}
             title={issue.title}
-            aria-label={`Task ${issueLabel}: ${issue.title}`}
+            aria-label={t("relationControls.pill.taskAriaLabel", {
+              defaultValue: "Task {{label}}: {{title}}",
+              label: issueLabel,
+              title: issue.title,
+            })}
           >
             {content}
           </Link>
@@ -74,7 +83,10 @@ export function RemovableIssueReferencePill({
             data-mention-kind="issue"
             className={chipClassName}
             title={issue.title}
-            aria-label={`Task: ${issue.title}`}
+            aria-label={t("relationControls.pill.taskAriaLabelNoId", {
+              defaultValue: "Task: {{title}}",
+              title: issue.title,
+            })}
           >
             {content}
           </span>
@@ -83,17 +95,20 @@ export function RemovableIssueReferencePill({
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remove blocker?</DialogTitle>
+            <DialogTitle>{t("relationControls.confirm.title", { defaultValue: "Remove blocker?" })}</DialogTitle>
             <DialogDescription>
-              Remove {confirmLabel} as a blocker for this task.
+              {t("relationControls.confirm.description", {
+                defaultValue: "Remove {{label}} as a blocker for this task.",
+                label: confirmLabel,
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">Cancel</Button>
+              <Button type="button" variant="outline">{t("relationControls.actions.cancel", { defaultValue: "Cancel" })}</Button>
             </DialogClose>
             <Button type="button" variant="destructive" onClick={confirmRemove}>
-              Remove blocker
+              {t("relationControls.actions.removeBlocker", { defaultValue: "Remove blocker" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -111,15 +126,28 @@ export function ExpandRelationListButton({
   expanded: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   if (!expanded && hiddenCount <= 0) return null;
   return (
     <button
       type="button"
       className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
       onClick={onClick}
-      aria-label={expanded ? "Show fewer items" : `Show ${hiddenCount} more items`}
+      aria-label={
+        expanded
+          ? t("relationControls.expand.showFewerAriaLabel", { defaultValue: "Show fewer items" })
+          : t("relationControls.expand.showMoreItemsAriaLabel", {
+              defaultValue: "Show {{count}} more items",
+              count: hiddenCount,
+            })
+      }
     >
-      {expanded ? "Show less" : `Show ${hiddenCount} more`}
+      {expanded
+        ? t("relationControls.expand.showLess", { defaultValue: "Show less" })
+        : t("relationControls.expand.showMore", {
+            defaultValue: "Show {{count}} more",
+            count: hiddenCount,
+          })}
     </button>
   );
 }

@@ -9,6 +9,7 @@ import type {
   CompanySkillVersion,
 } from "@paperclipai/shared";
 import { Link } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { agentsApi } from "@/api/agents";
 import { companySkillsApi } from "@/api/companySkills";
 import { queryKeys } from "@/lib/queryKeys";
@@ -54,9 +55,19 @@ export function AgentsUsingSkillBadge({
   skill: CompanySkillDetail;
   canManage?: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const count = skill.usedByAgents.length;
-  const label = `${count} ${count === 1 ? "agent uses" : "agents use"} this skill`;
+  const label =
+    count === 1
+      ? t("agentsUsingSkillDialog.badge.usageLabelOne", {
+          defaultValue: "{{count}} agent uses this skill",
+          count,
+        })
+      : t("agentsUsingSkillDialog.badge.usageLabelOther", {
+          defaultValue: "{{count}} agents use this skill",
+          count,
+        });
 
   return (
     <>
@@ -72,7 +83,10 @@ export function AgentsUsingSkillBadge({
         )}
       >
         <Users className="h-3.5 w-3.5" aria-hidden="true" />
-        {count} {count === 1 ? "agent" : "agents"}
+        {count}{" "}
+        {count === 1
+          ? t("agentsUsingSkillDialog.badge.agentCountOne", { defaultValue: "agent" })
+          : t("agentsUsingSkillDialog.badge.agentCountOther", { defaultValue: "agents" })}
       </button>
       <AgentsUsingSkillDialog
         open={open}
@@ -105,6 +119,7 @@ export function AgentsUsingSkillDialog({
   skill: CompanySkillDetail;
   canManage?: boolean;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const toast = useOptionalToastActions();
   const adapterCaps = useAdapterCapabilities();
@@ -201,11 +216,20 @@ export function AgentsUsingSkillDialog({
       ]);
     },
     onError: (error) => {
-      const message = error instanceof Error ? error.message : "Failed to update agent skills.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : t("agentsUsingSkillDialog.errors.updateFailed", {
+              defaultValue: "Failed to update agent skills.",
+            });
       toast?.pushToast({
         tone: "error",
-        title: "Update failed",
-        body: message.includes("403") ? "You don't have permission to change this agent's skills." : message,
+        title: t("agentsUsingSkillDialog.errors.updateFailedTitle", { defaultValue: "Update failed" }),
+        body: message.includes("403")
+          ? t("agentsUsingSkillDialog.errors.forbidden", {
+              defaultValue: "You don't have permission to change this agent's skills.",
+            })
+          : message,
       });
     },
   });
@@ -232,11 +256,26 @@ export function AgentsUsingSkillDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Agents using {skill.name}</DialogTitle>
+          <DialogTitle>
+            {t("agentsUsingSkillDialog.title", {
+              defaultValue: "Agents using {{name}}",
+              name: skill.name,
+            })}
+          </DialogTitle>
           <DialogDescription>
             {count === 0
-              ? "No agents have this skill assigned yet."
-              : `${count} ${count === 1 ? "agent has" : "agents have"} this skill in their desired set.`}
+              ? t("agentsUsingSkillDialog.description.empty", {
+                  defaultValue: "No agents have this skill assigned yet.",
+                })
+              : count === 1
+                ? t("agentsUsingSkillDialog.description.countOne", {
+                    defaultValue: "{{count}} agent has this skill in their desired set.",
+                    count,
+                  })
+                : t("agentsUsingSkillDialog.description.countOther", {
+                    defaultValue: "{{count}} agents have this skill in their desired set.",
+                    count,
+                  })}
           </DialogDescription>
         </DialogHeader>
 
@@ -244,8 +283,12 @@ export function AgentsUsingSkillDialog({
           {count === 0 ? (
             <div className="rounded-md border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
               {canManage
-                ? "Add an agent below to assign this skill."
-                : "This skill isn't assigned to any agents."}
+                ? t("agentsUsingSkillDialog.emptyState.canManage", {
+                    defaultValue: "Add an agent below to assign this skill.",
+                  })
+                : t("agentsUsingSkillDialog.emptyState.readOnly", {
+                    defaultValue: "This skill isn't assigned to any agents.",
+                  })}
             </div>
           ) : (
             <ul className="divide-y divide-border">
@@ -318,6 +361,7 @@ function AgentRow({
   onRemove: () => void;
   onPin: (versionId: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const behindLatest =
     pinnedRevision !== null && latestRevision !== null && latestRevision > pinnedRevision
       ? latestRevision - pinnedRevision
@@ -340,12 +384,21 @@ function AgentRow({
 
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         {!hasVersions ? (
-          <span className="text-sm text-muted-foreground" aria-label={`${agent.name} version`}>
+          <span
+            className="text-sm text-muted-foreground"
+            aria-label={t("agentsUsingSkillDialog.row.versionLabel", {
+              defaultValue: "{{name}} version",
+              name: agent.name,
+            })}
+          >
             —
           </span>
         ) : canManage ? (
           <select
-            aria-label={`${agent.name} skill version`}
+            aria-label={t("agentsUsingSkillDialog.row.skillVersionLabel", {
+              defaultValue: "{{name}} skill version",
+              name: agent.name,
+            })}
             value={agent.versionId ?? LATEST_VALUE}
             disabled={busy}
             onChange={(event) =>
@@ -354,7 +407,12 @@ function AgentRow({
             className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground disabled:opacity-60"
           >
             <option value={LATEST_VALUE}>
-              Latest{latestRevision !== null ? ` (v${latestRevision})` : ""}
+              {latestRevision !== null
+                ? t("agentsUsingSkillDialog.row.latestWithRevision", {
+                    defaultValue: "Latest (v{{revision}})",
+                    revision: latestRevision,
+                  })
+                : t("agentsUsingSkillDialog.row.latest", { defaultValue: "Latest" })}
             </option>
             {versions.map((version) => (
               <option key={version.id} value={version.id}>
@@ -367,12 +425,25 @@ function AgentRow({
           <span className="text-xs text-muted-foreground">
             {agent.versionId
               ? `v${pinnedRevision ?? "?"}`
-              : `Latest${latestRevision !== null ? ` (v${latestRevision})` : ""}`}
+              : latestRevision !== null
+                ? t("agentsUsingSkillDialog.row.latestWithRevision", {
+                    defaultValue: "Latest (v{{revision}})",
+                    revision: latestRevision,
+                  })
+                : t("agentsUsingSkillDialog.row.latest", { defaultValue: "Latest" })}
           </span>
         )}
         {behindLatest > 0 ? (
           <span className="text-(length:--text-nano) text-amber-500">
-            {behindLatest} version{behindLatest === 1 ? "" : "s"} behind latest
+            {behindLatest === 1
+              ? t("agentsUsingSkillDialog.row.behindLatestOne", {
+                  defaultValue: "{{count}} version behind latest",
+                  count: behindLatest,
+                })
+              : t("agentsUsingSkillDialog.row.behindLatestOther", {
+                  defaultValue: "{{count}} versions behind latest",
+                  count: behindLatest,
+                })}
           </span>
         ) : null}
       </div>
@@ -385,12 +456,19 @@ function AgentRow({
               size="sm"
               onClick={onRemove}
               disabled={busy}
-              aria-label={`Confirm removing this skill from ${agent.name}`}
+              aria-label={t("agentsUsingSkillDialog.row.confirmRemoveLabel", {
+                defaultValue: "Confirm removing this skill from {{name}}",
+                name: agent.name,
+              })}
             >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Remove"}
+              {busy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                t("agentsUsingSkillDialog.actions.remove", { defaultValue: "Remove" })
+              )}
             </Button>
             <Button variant="ghost" size="sm" onClick={onCancelRemove} disabled={busy}>
-              Cancel
+              {t("agentsUsingSkillDialog.actions.cancel", { defaultValue: "Cancel" })}
             </Button>
           </div>
         ) : (
@@ -400,7 +478,10 @@ function AgentRow({
             onClick={onRequestRemove}
             disabled={busy}
             className="shrink-0 text-muted-foreground hover:text-destructive"
-            aria-label={`Remove this skill from ${agent.name}`}
+            aria-label={t("agentsUsingSkillDialog.row.removeLabel", {
+              defaultValue: "Remove this skill from {{name}}",
+              name: agent.name,
+            })}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -421,6 +502,7 @@ function AddAgentPicker({
   disabled: boolean;
   onSelect: (agent: Agent) => void;
 }) {
+  const { t } = useTranslation();
   type AgentOption = SearchableSelectOption<string> & { agent: Agent };
   const groups = useMemo<readonly SearchableSelectGroup<string, AgentOption>[]>(() => {
     const options: AgentOption[] = agents.map((agent) => ({
@@ -439,10 +521,18 @@ function AddAgentPicker({
       value=""
       groups={groups}
       loading={loading}
-      loadingMessage="Loading agents..."
-      placeholder="Add agent…"
-      searchPlaceholder="Search agents..."
-      emptyMessage="All eligible agents already have this skill."
+      loadingMessage={t("agentsUsingSkillDialog.picker.loading", {
+        defaultValue: "Loading agents...",
+      })}
+      placeholder={t("agentsUsingSkillDialog.picker.placeholder", {
+        defaultValue: "Add agent…",
+      })}
+      searchPlaceholder={t("agentsUsingSkillDialog.picker.searchPlaceholder", {
+        defaultValue: "Search agents...",
+      })}
+      emptyMessage={t("agentsUsingSkillDialog.picker.empty", {
+        defaultValue: "All eligible agents already have this skill.",
+      })}
       disabled={disabled}
       onValueChange={(_value, option) => {
         onSelect(option.agent);
@@ -453,7 +543,7 @@ function AddAgentPicker({
       renderValue={() => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-          Add agent…
+          {t("agentsUsingSkillDialog.picker.placeholder", { defaultValue: "Add agent…" })}
         </span>
       )}
       renderOption={(option) => (

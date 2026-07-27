@@ -361,7 +361,7 @@ function CasePropertiesContent({
           <CasePropertyRow label={t("caseDetail.fields.key", { defaultValue: "Key" })} mode={mode}>
             <CaseCopyableToken
               value={caseData.key}
-              label="case key"
+              label={t("caseIdentifierKey.label.caseKey", { defaultValue: "case key" })}
               className="font-mono text-xs text-muted-foreground"
               truncate={!isFull}
             />

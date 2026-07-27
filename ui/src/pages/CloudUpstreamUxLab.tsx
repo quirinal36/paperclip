@@ -24,6 +24,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "@/lib/router";
+import { useTranslation, t } from "@/i18n";
 
 type FixtureStateKey =
   | "settings-pane"
@@ -114,9 +115,12 @@ export function CloudUpstreamUxLab() {
 }
 
 function FixtureNav({ active }: { active: FixtureStateKey }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-md border border-dashed border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-      <div className="mb-1 font-semibold uppercase tracking-wide">UX lab · cloud upstream</div>
+      <div className="mb-1 font-semibold uppercase tracking-wide">
+        {t("cloudUpstreamUxLab.fixtureNav.heading", { defaultValue: "UX lab · cloud upstream" })}
+      </div>
       <div className="flex flex-wrap gap-x-3 gap-y-1">
         {PARSE_ORDER.map((key) => (
           <a
@@ -128,7 +132,7 @@ function FixtureNav({ active }: { active: FixtureStateKey }) {
                 : "rounded px-2 py-0.5 hover:bg-accent/40"
             }
           >
-            {FIXTURE_LABELS[key]}
+            {t("cloudUpstreamUxLab.fixtureNav.labels." + key, { defaultValue: FIXTURE_LABELS[key] })}
           </a>
         ))}
       </div>
@@ -147,6 +151,7 @@ interface Fixture {
 }
 
 function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
+  const { t } = useTranslation();
   const { connection, preview, latestRun, history, notice, actionError, selectedCompanyName } = fixture;
   const activeStep: CloudUpstreamStep = latestRun?.activeStep
     ?? (preview ? "preview" : connection?.tokenStatus === "connected" ? "scan" : "connect");
@@ -156,17 +161,23 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <CloudUpload className="h-5 w-5 text-muted-foreground" />
-            <h1 className="text-lg font-semibold">Cloud upstream</h1>
+            <h1 className="text-lg font-semibold">
+              {t("cloudUpstreamUxLab.header.title", { defaultValue: "Cloud upstream" })}
+            </h1>
           </div>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Push {selectedCompanyName} into a Paperclip Cloud stack. Automations stay paused until activation.
+            {t("cloudUpstreamUxLab.header.subtitle", {
+              defaultValue:
+                "Push {{companyName}} into a Paperclip Cloud stack. Automations stay paused until activation.",
+              companyName: selectedCompanyName,
+            })}
           </p>
         </div>
         {connection?.target.origin ? (
           <Button variant="outline" size="sm" asChild>
             <a href={connection.target.origin} target="_blank" rel="noreferrer">
               <ExternalLink className="h-4 w-4" />
-              Open cloud
+              {t("cloudUpstreamUxLab.header.openCloud", { defaultValue: "Open cloud" })}
             </a>
           </Button>
         ) : null}
@@ -186,7 +197,9 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
       <Stepper activeStep={activeStep} />
 
       <section className="space-y-3">
-        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Connection</div>
+        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t("cloudUpstreamUxLab.connection.label", { defaultValue: "Connection" })}
+        </div>
         <div className="rounded-md border border-border px-4 py-4">
           {connection ? (
             <div className="grid gap-3 lg:grid-cols-(--gtc-17) lg:items-start">
@@ -195,15 +208,24 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
                   {connection.target.stackDisplayName ?? connection.target.stackSlug ?? connection.target.stackId}
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {connection.target.product} · {connection.target.origin} · token {connection.tokenStatus}
+                  {t("cloudUpstreamUxLab.connection.meta", {
+                    defaultValue: "{{product}} · {{origin}} · token {{tokenStatus}}",
+                    product: connection.target.product,
+                    origin: connection.target.origin,
+                    tokenStatus: connection.tokenStatus,
+                  })}
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Schema {connection.target.schemaMajor}. Max chunk {formatBytes(connection.target.maxChunkBytes)}.
+                  {t("cloudUpstreamUxLab.connection.schemaInfo", {
+                    defaultValue: "Schema {{schema}}. Max chunk {{maxChunk}}.",
+                    schema: connection.target.schemaMajor,
+                    maxChunk: formatBytes(connection.target.maxChunkBytes),
+                  })}
                 </div>
               </div>
               <Button variant="outline" size="sm">
                 <RefreshCcw className="h-4 w-4" />
-                Preview push
+                {t("cloudUpstreamUxLab.connection.previewPush", { defaultValue: "Preview push" })}
               </Button>
             </div>
           ) : (
@@ -211,12 +233,14 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
               <Input
                 defaultValue="https://paperclip.paperclip.app/PC521D/dashboard"
                 placeholder="https://paperclip.paperclip.app/PC521D/dashboard"
-                aria-label="Paperclip Cloud stack URL"
+                aria-label={t("cloudUpstreamUxLab.connection.stackUrlAriaLabel", {
+                  defaultValue: "Paperclip Cloud stack URL",
+                })}
                 autoFocus
               />
               <Button disabled>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Discovering
+                {t("cloudUpstreamUxLab.connection.discovering", { defaultValue: "Discovering" })}
               </Button>
             </div>
           )}
@@ -226,10 +250,12 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
       {preview ? (
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preview</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("cloudUpstreamUxLab.preview.label", { defaultValue: "Preview" })}
+            </div>
             <Button disabled={!preview.schemaCompatible}>
               <CloudUpload className="h-4 w-4" />
-              Push to cloud
+              {t("cloudUpstreamUxLab.preview.pushToCloud", { defaultValue: "Push to cloud" })}
             </Button>
           </div>
           <SummaryGrid summary={preview.summary} />
@@ -241,21 +267,23 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
       {latestRun ? (
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Progress and finish</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("cloudUpstreamUxLab.progress.label", { defaultValue: "Progress and finish" })}
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm">
                 <FileJson className="h-4 w-4" />
-                Download report
+                {t("cloudUpstreamUxLab.progress.downloadReport", { defaultValue: "Download report" })}
               </Button>
               {latestRun.status === "failed" || latestRun.status === "cancelled" ? (
                 <Button variant="outline" size="sm">
                   <RefreshCcw className="h-4 w-4" />
-                  Retry
+                  {t("cloudUpstreamUxLab.progress.retry", { defaultValue: "Retry" })}
                 </Button>
               ) : latestRun.status === "succeeded" ? (
                 <Button variant="outline" size="sm">
                   <RefreshCcw className="h-4 w-4" />
-                  Re-run
+                  {t("cloudUpstreamUxLab.progress.rerun", { defaultValue: "Re-run" })}
                 </Button>
               ) : null}
             </div>
@@ -265,11 +293,16 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
               <div>
                 <div className="text-sm font-medium capitalize">{latestRun.status}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  Run {latestRun.id.slice(0, 8)} · {latestRun.completedAt
-                    ? `completed ${formatDate(latestRun.completedAt)}`
-                    : latestRun.status === "running"
-                      ? "in progress"
-                      : "in progress"}
+                  {t("cloudUpstreamUxLab.progress.runLine", {
+                    defaultValue: "Run {{id}} · {{detail}}",
+                    id: latestRun.id.slice(0, 8),
+                    detail: latestRun.completedAt
+                      ? t("cloudUpstreamUxLab.progress.completed", {
+                          defaultValue: "completed {{date}}",
+                          date: formatDate(latestRun.completedAt),
+                        })
+                      : t("cloudUpstreamUxLab.progress.inProgress", { defaultValue: "in progress" }),
+                  })}
                 </div>
               </div>
               <div className="text-sm tabular-nums">{latestRun.progressPercent}%</div>
@@ -296,7 +329,7 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
         <section className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             <History className="h-3.5 w-3.5" />
-            History
+            {t("cloudUpstreamUxLab.history.label", { defaultValue: "History" })}
           </div>
           <div className="divide-y divide-border rounded-md border border-border">
             {history.map((run) => (
@@ -304,7 +337,13 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
                 key={run.id}
                 className="grid w-full gap-1 px-4 py-3 text-left text-sm hover:bg-accent/40 sm:grid-cols-(--gtc-17)"
               >
-                <span>Run {run.id.slice(0, 8)} · {run.status}</span>
+                <span>
+                  {t("cloudUpstreamUxLab.history.runLine", {
+                    defaultValue: "Run {{id}} · {{status}}",
+                    id: run.id.slice(0, 8),
+                    status: run.status,
+                  })}
+                </span>
                 <span className="text-xs text-muted-foreground">{formatDate(run.createdAt)}</span>
               </div>
             ))}
@@ -316,6 +355,7 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
 }
 
 function Stepper({ activeStep }: { activeStep: CloudUpstreamStep }) {
+  const { t } = useTranslation();
   const activeIndex = STEPS.findIndex((step) => step.key === activeStep);
   return (
     <div className="grid gap-2 rounded-md border border-border px-3 py-3 sm:grid-cols-6">
@@ -329,7 +369,9 @@ function Stepper({ activeStep }: { activeStep: CloudUpstreamStep }) {
             ) : (
               <span className={active ? "h-4 w-4 rounded-full border-2 border-primary" : "h-4 w-4 rounded-full border border-border"} />
             )}
-            <span className={active ? "font-medium text-foreground" : "text-muted-foreground"}>{step.label}</span>
+            <span className={active ? "font-medium text-foreground" : "text-muted-foreground"}>
+              {t("cloudUpstreamUxLab.steps." + step.key, { defaultValue: step.label })}
+            </span>
           </div>
         );
       })}
@@ -338,12 +380,15 @@ function Stepper({ activeStep }: { activeStep: CloudUpstreamStep }) {
 }
 
 function SummaryGrid({ summary }: { summary: CloudUpstreamSummaryCount[] }) {
+  const { t } = useTranslation();
   return (
     <div className="grid gap-2 sm:grid-cols-4">
       {summary.map((item) => (
         <div key={item.key} className="rounded-md border border-border px-3 py-2">
           <div className="text-lg font-semibold tabular-nums">{item.count}</div>
-          <div className="text-xs text-muted-foreground">{item.label}</div>
+          <div className="text-xs text-muted-foreground">
+            {t("cloudUpstreamUxLab.preview.summary." + item.key, { defaultValue: item.label })}
+          </div>
         </div>
       ))}
     </div>
@@ -351,18 +396,27 @@ function SummaryGrid({ summary }: { summary: CloudUpstreamSummaryCount[] }) {
 }
 
 function WarningsPanel({ warnings }: { warnings: CloudUpstreamWarning[] }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-md border border-border px-4 py-3">
       <div className="mb-2 flex items-center gap-2 text-sm font-medium">
         <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-        Warnings
+        {t("cloudUpstreamUxLab.preview.warnings.heading", { defaultValue: "Warnings" })}
       </div>
       <div className="divide-y divide-border">
         {warnings.map((warning) => (
           <div key={warning.code} className="grid gap-2 py-2 sm:grid-cols-(--gtc-21)">
             <AlertTriangle className={warning.severity === "blocker" ? "h-4 w-4 text-destructive" : "h-4 w-4 text-amber-600"} />
-            <div className="text-sm font-medium">{warning.title}</div>
-            <div className="text-sm text-muted-foreground">{warning.detail}</div>
+            <div className="text-sm font-medium">
+              {t("cloudUpstreamUxLab.preview.warnings.items." + warning.code + ".title", {
+                defaultValue: warning.title,
+              })}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {t("cloudUpstreamUxLab.preview.warnings.items." + warning.code + ".detail", {
+                defaultValue: warning.detail,
+              })}
+            </div>
           </div>
         ))}
       </div>
@@ -371,11 +425,18 @@ function WarningsPanel({ warnings }: { warnings: CloudUpstreamWarning[] }) {
 }
 
 function ConflictTable({ conflicts }: { conflicts: CloudUpstreamConflict[] }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-md border border-border px-4 py-3">
-      <div className="mb-2 text-sm font-medium">Conflicts</div>
+      <div className="mb-2 text-sm font-medium">
+        {t("cloudUpstreamUxLab.preview.conflicts.heading", { defaultValue: "Conflicts" })}
+      </div>
       {conflicts.length === 0 ? (
-        <div className="text-sm text-muted-foreground">No target conflicts detected for this preview.</div>
+        <div className="text-sm text-muted-foreground">
+          {t("cloudUpstreamUxLab.preview.conflicts.empty", {
+            defaultValue: "No target conflicts detected for this preview.",
+          })}
+        </div>
       ) : (
         <div className="divide-y divide-border">
           {conflicts.map((conflict) => (
@@ -393,10 +454,13 @@ function ConflictTable({ conflicts }: { conflicts: CloudUpstreamConflict[] }) {
 }
 
 function ActivationChecklist({ run }: { run: CloudUpstreamRun }) {
-  const rows = buildActivationRows(run);
+  const { t } = useTranslation();
+  const rows = buildActivationRows(t, run);
   return (
     <div className="rounded-md border border-border px-4 py-3">
-      <div className="mb-2 text-sm font-medium">Activation checklist</div>
+      <div className="mb-2 text-sm font-medium">
+        {t("cloudUpstreamUxLab.activation.heading", { defaultValue: "Activation checklist" })}
+      </div>
       <div className="divide-y divide-border">
         {rows.map((row) => {
           const activated = row.status === "activated";
@@ -407,14 +471,21 @@ function ActivationChecklist({ run }: { run: CloudUpstreamRun }) {
                 <div className="text-xs text-muted-foreground">{row.statusLabel}</div>
               </div>
               <div className="text-muted-foreground">
-                {row.count === 0 ? `0 imported ${row.pluralLabel} in this run.` : row.detail}
+                {row.count === 0
+                  ? t("cloudUpstreamUxLab.activation.row.importedEmpty", {
+                      defaultValue: "0 imported {{plural}} in this run.",
+                      plural: row.pluralLabel,
+                    })
+                  : row.detail}
               </div>
               <div className="flex flex-wrap gap-2 sm:justify-end">
                 <Button variant={activated ? "secondary" : "default"} size="sm" disabled={row.count === 0 || activated}>
-                  {activated ? "Activated" : "Activate"}
+                  {activated
+                    ? t("cloudUpstreamUxLab.activation.row.activated", { defaultValue: "Activated" })
+                    : t("cloudUpstreamUxLab.activation.row.activate", { defaultValue: "Activate" })}
                 </Button>
                 <Button variant="ghost" size="sm" disabled={activated}>
-                  Keep paused
+                  {t("cloudUpstreamUxLab.activation.row.keepPaused", { defaultValue: "Keep paused" })}
                 </Button>
               </div>
             </div>
@@ -425,24 +496,41 @@ function ActivationChecklist({ run }: { run: CloudUpstreamRun }) {
   );
 }
 
-function buildActivationRows(run: CloudUpstreamRun) {
+function buildActivationRows(t: ReturnType<typeof useTranslation>["t"], run: CloudUpstreamRun) {
   const decisions = decisionsFromReport(run.report);
   return ACTIVATION_CATEGORIES.map((category) => {
     const decision = decisions[category.key];
     const count = summaryCount(run.summary, category.key);
     const status = decision?.status === "activated" ? "activated" : "paused";
     const pluralLabel = `${category.singular}${count === 1 ? "" : "s"}`;
+    const categoryDetail = t("cloudUpstreamUxLab.activation.categories." + category.key + ".detail", {
+      defaultValue: category.detail,
+    });
     return {
       ...category,
+      label: t("cloudUpstreamUxLab.activation.categories." + category.key + ".label", {
+        defaultValue: category.label,
+      }),
       count,
       pluralLabel,
       status,
-      detail: `${count} imported ${pluralLabel} are paused by default. ${category.detail}`,
+      detail: t("cloudUpstreamUxLab.activation.row.detail", {
+        defaultValue: "{{num}} imported {{plural}} are paused by default. {{categoryDetail}}",
+        num: count,
+        plural: pluralLabel,
+        categoryDetail,
+      }),
       statusLabel: status === "activated"
-        ? `${count} activated`
+        ? t("cloudUpstreamUxLab.activation.row.statusActivated", {
+            defaultValue: "{{num}} activated",
+            num: count,
+          })
         : count === 0
-          ? "0 imported"
-          : `${count} paused`,
+          ? t("cloudUpstreamUxLab.activation.row.statusZero", { defaultValue: "0 imported" })
+          : t("cloudUpstreamUxLab.activation.row.statusPaused", {
+              defaultValue: "{{num}} paused",
+              num: count,
+            }),
     };
   });
 }
@@ -741,7 +829,9 @@ function buildFixture(state: FixtureStateKey): Fixture {
         preview: null,
         latestRun: null,
         history: [],
-        notice: "Cloud upstream connection approved.",
+        notice: t("cloudUpstreamUxLab.notices.connectionApproved", {
+          defaultValue: "Cloud upstream connection approved.",
+        }),
         actionError: null,
       };
     case "connect-wizard":
@@ -762,7 +852,10 @@ function buildFixture(state: FixtureStateKey): Fixture {
         latestRun: null,
         history: [],
         notice: null,
-        actionError: "Cloud stack is on schema 5 but this local build pushes schema 7. Upgrade the cloud stack to continue.",
+        actionError: t("cloudUpstreamUxLab.errors.schemaMismatch", {
+          defaultValue:
+            "Cloud stack is on schema 5 but this local build pushes schema 7. Upgrade the cloud stack to continue.",
+        }),
       };
     case "preview":
       return {
@@ -781,7 +874,9 @@ function buildFixture(state: FixtureStateKey): Fixture {
         preview: cleanPreview(),
         latestRun: null,
         history: [],
-        notice: "Preview completed. No target conflicts detected.",
+        notice: t("cloudUpstreamUxLab.notices.previewCompleted", {
+          defaultValue: "Preview completed. No target conflicts detected.",
+        }),
         actionError: null,
       };
     case "progress":
@@ -804,7 +899,10 @@ function buildFixture(state: FixtureStateKey): Fixture {
           { ...failedRun(), id: "run_9pYqXwVtSrQ" },
         ],
         notice: null,
-        actionError: "Push run failed. Review the events. Retry resumes from ledger checkpoint chunk-3 — chunks 1–3 will not be re-applied.",
+        actionError: t("cloudUpstreamUxLab.errors.pushFailedRetry", {
+          defaultValue:
+            "Push run failed. Review the events. Retry resumes from ledger checkpoint chunk-3 — chunks 1–3 will not be re-applied.",
+        }),
       };
     case "finish":
       return {
@@ -815,7 +913,9 @@ function buildFixture(state: FixtureStateKey): Fixture {
         history: [
           { ...succeededRun(), id: "run_aZcXvBnMqWeR" },
         ],
-        notice: "Push run completed. Review activation before unpausing automations.",
+        notice: t("cloudUpstreamUxLab.notices.pushCompleted", {
+          defaultValue: "Push run completed. Review activation before unpausing automations.",
+        }),
         actionError: null,
       };
   }

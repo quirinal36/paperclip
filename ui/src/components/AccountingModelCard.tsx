@@ -1,8 +1,10 @@
 import { Database, Gauge, ReceiptText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useTranslation } from "@/i18n";
 
 const SURFACES = [
   {
+    id: "inferenceLedger",
     title: "Inference ledger",
     description: "Request-scoped usage and billed runs from cost_events.",
     icon: Database,
@@ -10,6 +12,7 @@ const SURFACES = [
     tone: "from-sky-500/12 via-sky-500/6 to-transparent",
   },
   {
+    id: "financeLedger",
     title: "Finance ledger",
     description: "Account-level charges that are not one prompt-response pair.",
     icon: ReceiptText,
@@ -17,6 +20,7 @@ const SURFACES = [
     tone: "from-amber-500/14 via-amber-500/6 to-transparent",
   },
   {
+    id: "liveQuotas",
     title: "Live quotas",
     description: "Provider or biller windows that can stop traffic in real time.",
     icon: Gauge,
@@ -26,16 +30,19 @@ const SURFACES = [
 ] as const;
 
 export function AccountingModelCard() {
+  const { t } = useTranslation();
   return (
     <Card className="relative overflow-hidden border-border/70">
       <div className="absolute inset-0 bg-(image:--gradient-extract-3)" />
       <CardHeader className="relative px-5 pt-5 pb-2">
         <CardTitle className="text-sm font-semibold uppercase tracking-(--tracking-caps) text-muted-foreground">
-          Accounting model
+          {t("accountingModelCard.title", { defaultValue: "Accounting model" })}
         </CardTitle>
         <CardDescription className="max-w-2xl text-sm leading-6">
-          Paperclip now separates request-level inference usage from account-level finance events.
-          That keeps provider reporting honest when the biller is OpenRouter, Cloudflare, Bedrock, or another intermediary.
+          {t("accountingModelCard.description", {
+            defaultValue:
+              "Paperclip now separates request-level inference usage from account-level finance events. That keeps provider reporting honest when the biller is OpenRouter, Cloudflare, Bedrock, or another intermediary.",
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent className="relative grid gap-3 px-5 pb-5 md:grid-cols-3">
@@ -43,7 +50,7 @@ export function AccountingModelCard() {
           const Icon = surface.icon;
           return (
             <div
-              key={surface.title}
+              key={surface.id}
               className={`rounded-2xl border border-border/70 bg-gradient-to-br ${surface.tone} p-4 shadow-sm`}
             >
               <div className="mb-3 flex items-center gap-3">
@@ -51,13 +58,19 @@ export function AccountingModelCard() {
                   <Icon className="h-4 w-4 text-foreground" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold">{surface.title}</div>
-                  <div className="text-xs text-muted-foreground">{surface.description}</div>
+                  <div className="text-sm font-semibold">
+                    {t(`accountingModelCard.surfaces.${surface.id}.title`, { defaultValue: surface.title })}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {t(`accountingModelCard.surfaces.${surface.id}.description`, { defaultValue: surface.description })}
+                  </div>
                 </div>
               </div>
               <div className="space-y-1.5 text-xs text-muted-foreground">
-                {surface.points.map((point) => (
-                  <div key={point}>{point}</div>
+                {surface.points.map((point, index) => (
+                  <div key={point}>
+                    {t(`accountingModelCard.surfaces.${surface.id}.points.${index}`, { defaultValue: point })}
+                  </div>
                 ))}
               </div>
             </div>

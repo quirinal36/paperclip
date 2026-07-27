@@ -13,6 +13,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Link } from "@/lib/router";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 import {
   ROUTINE_SECTION_KEYS,
   type RoutineSectionKey,
@@ -34,12 +35,14 @@ type NavItem = {
 };
 
 type NavGroup = {
+  id: string;
   label: string;
   items: NavItem[];
 };
 
 const NAV_GROUPS: NavGroup[] = [
   {
+    id: "routine",
     label: "Routine",
     items: [
       { key: "overview", label: "Overview", icon: Circle },
@@ -50,6 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: "operate",
     label: "Operate",
     items: [
       { key: "runs", label: "Runs", icon: Play },
@@ -74,6 +78,7 @@ export function RoutineSubSidebar({
   hasLiveRun: boolean;
   onNavigate: (section: RoutineSectionKey) => void;
 }) {
+  const { t } = useTranslation();
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
   const focusItem = (index: number) => {
@@ -109,13 +114,13 @@ export function RoutineSubSidebar({
 
   return (
     <nav
-      aria-label="Routine sections"
+      aria-label={t("routineSubSidebar.nav.ariaLabel", { defaultValue: "Routine sections" })}
       className="hidden h-full w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-background px-3 py-4 md:flex"
     >
       {NAV_GROUPS.map((group) => (
-        <div key={group.label} className="flex flex-col gap-0.5">
+        <div key={group.id} className="flex flex-col gap-0.5">
           <p className="mx-2 px-2 pb-1 text-(length:--text-nano) font-medium uppercase tracking-widest font-mono text-muted-foreground/60">
-            {group.label}
+            {t(`routineSubSidebar.groups.${group.id}`, { defaultValue: group.label })}
           </p>
           {group.items.map((item) => {
             flatIndex += 1;
@@ -147,12 +152,14 @@ export function RoutineSubSidebar({
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">
+                  {t(`routineSubSidebar.items.${item.key}`, { defaultValue: item.label })}
+                </span>
                 {showLiveDot ? (
                   <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500 motion-safe:animate-pulse" />
                 ) : dirty ? (
                   <span
-                    aria-label="Unsaved changes"
+                    aria-label={t("routineSubSidebar.unsavedChanges", { defaultValue: "Unsaved changes" })}
                     className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 ring-2 ring-background"
                   />
                 ) : null}
@@ -175,6 +182,7 @@ export function RoutineSectionPicker({
   onNavigate: (section: RoutineSectionKey) => void;
   isSectionDirty: (section: RoutineSectionKey) => boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="sticky top-0 z-10 border-b border-border bg-background px-4 py-2 md:hidden">
       <Select
@@ -185,20 +193,23 @@ export function RoutineSectionPicker({
           }
         }}
       >
-        <SelectTrigger className="h-11 w-full" aria-label="Routine section">
+        <SelectTrigger
+          className="h-11 w-full"
+          aria-label={t("routineSubSidebar.picker.ariaLabel", { defaultValue: "Routine section" })}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {NAV_GROUPS.map((group) => (
-            <SelectGroup key={group.label}>
+            <SelectGroup key={group.id}>
               <SelectLabel className="uppercase tracking-(--tracking-eyebrow) text-(length:--text-micro)">
-                {group.label}
+                {t(`routineSubSidebar.groups.${group.id}`, { defaultValue: group.label })}
               </SelectLabel>
               {group.items.map((item) => (
                 <SelectItem key={item.key} value={item.key} className="h-11">
                   <span className="flex items-center gap-2">
                     <item.icon className="h-3.5 w-3.5" />
-                    {item.label}
+                    {t(`routineSubSidebar.items.${item.key}`, { defaultValue: item.label })}
                     {isSectionDirty(item.key) ? (
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                     ) : null}

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cva, type VariantProps } from "class-variance-authority";
 import { ShieldAlert, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Link } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { queryKeys } from "@/lib/queryKeys";
 import { toolsApi } from "@/api/tools";
@@ -102,6 +103,7 @@ function PresentationalBanner({
 }
 
 export function EnforcementBanner(props: EnforcementBannerProps) {
+  const { t } = useTranslation();
   const { companyId, className, forceVariant, recentDenialCount, tone, title, body, icon, action } = props;
 
   // Presentational mode short-circuits the data hook below.
@@ -152,15 +154,23 @@ export function EnforcementBanner(props: EnforcementBannerProps) {
       <div className="min-w-0 flex-1">
         {variant === "denied-detected" ? (
           <p>
-            <span className="font-medium">{computedCount}</span> governed tool call
-            {computedCount === 1 ? " was" : "s were"} denied or failed in the last hour. Access is enforced
-            server-side by the tool gateway — review what was blocked and why in the audit log.
+            <span className="font-medium">{computedCount}</span>{" "}
+            {computedCount === 1
+              ? t("enforcementBanner.denied.summaryOne", {
+                  defaultValue:
+                    "governed tool call was denied or failed in the last hour. Access is enforced server-side by the tool gateway — review what was blocked and why in the audit log.",
+                })
+              : t("enforcementBanner.denied.summaryOther", {
+                  defaultValue:
+                    "governed tool calls were denied or failed in the last hour. Access is enforced server-side by the tool gateway — review what was blocked and why in the audit log.",
+                })}
           </p>
         ) : (
           <p>
-            Tool access is enforced server-side by the tool gateway. These screens configure and observe that
-            enforcement — they do not replace it. Agents see and call only the tools their profiles and policies
-            allow; everything else is denied by default.
+            {t("enforcementBanner.default.body", {
+              defaultValue:
+                "Tool access is enforced server-side by the tool gateway. These screens configure and observe that enforcement — they do not replace it. Agents see and call only the tools their profiles and policies allow; everything else is denied by default.",
+            })}
           </p>
         )}
       </div>
@@ -168,7 +178,7 @@ export function EnforcementBanner(props: EnforcementBannerProps) {
         to="/apps/advanced/audit"
         className="shrink-0 text-xs font-medium text-primary hover:underline"
       >
-        View audit →
+        {t("enforcementBanner.actions.viewAudit", { defaultValue: "View audit →" })}
       </Link>
     </div>
   );

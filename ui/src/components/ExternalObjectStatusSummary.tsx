@@ -9,6 +9,7 @@ import {
 import { externalObjectStatusBadge, externalObjectStatusBadgeDefault } from "../lib/status-colors";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { cn } from "../lib/utils";
+import { t } from "@/i18n";
 
 interface ExternalObjectStatusSummaryProps {
   summary: ExternalObjectSummary | null | undefined;
@@ -34,9 +35,23 @@ function buildBreakdownTitle(summary: ExternalObjectSummary): string {
     if (!count) continue;
     parts.push(`${count} ${externalObjectCategoryLabel(category).toLowerCase()}`);
   }
-  if (summary.staleCount > 0) parts.push(`${summary.staleCount} stale`);
-  parts.push(`${summary.total} total`);
-  return `External objects: ${parts.join(", ")}`;
+  if (summary.staleCount > 0)
+    parts.push(
+      t("externalObjectStatusSummary.breakdown.stale", {
+        defaultValue: "{{n}} stale",
+        n: summary.staleCount,
+      }),
+    );
+  parts.push(
+    t("externalObjectStatusSummary.breakdown.total", {
+      defaultValue: "{{n}} total",
+      n: summary.total,
+    }),
+  );
+  return t("externalObjectStatusSummary.breakdown.title", {
+    defaultValue: "External objects: {{breakdown}}",
+    breakdown: parts.join(", "),
+  });
 }
 
 /**

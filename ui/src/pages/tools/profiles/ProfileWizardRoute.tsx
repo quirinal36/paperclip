@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useParams, useSearchParams } from "@/lib/router";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { useCompany } from "@/context/CompanyContext";
+import { useTranslation } from "@/i18n";
 import { advancedTabHref } from "../tool-tabs";
 import { ToolsAdminGate } from "./ToolsAdminGate";
 import { ProfileWizard } from "./ProfileWizard";
@@ -14,6 +15,7 @@ import { TEMPLATES, type TemplateKey } from "./profile-model";
  * the rest of the tool-access surface.
  */
 export function ProfileWizardRoute({ mode }: { mode: "new" | "edit" }) {
+  const { t } = useTranslation();
   const { selectedCompany, selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const params = useParams<{ profileId?: string }>();
@@ -21,23 +23,38 @@ export function ProfileWizardRoute({ mode }: { mode: "new" | "edit" }) {
 
   const templateParam = searchParams.get("template");
   const stepParam = Number(searchParams.get("step"));
-  const initialTemplate = TEMPLATES.some((t) => t.key === templateParam)
+  const initialTemplate = TEMPLATES.some((template) => template.key === templateParam)
     ? (templateParam as TemplateKey)
     : undefined;
   const initialStep = stepParam === 2 || stepParam === 3 ? stepParam : undefined;
 
   useEffect(() => {
     setBreadcrumbs([
-      { label: selectedCompany?.name ?? "Company", href: "/dashboard" },
-      { label: "Apps", href: "/apps" },
-      { label: "Access profiles", href: advancedTabHref("profiles") },
-      { label: mode === "edit" ? "Resume draft" : "New profile" },
+      {
+        label: selectedCompany?.name ?? t("profileWizardRoute.breadcrumbs.company", { defaultValue: "Company" }),
+        href: "/dashboard",
+      },
+      { label: t("profileWizardRoute.breadcrumbs.apps", { defaultValue: "Apps" }), href: "/apps" },
+      {
+        label: t("profileWizardRoute.breadcrumbs.accessProfiles", { defaultValue: "Access profiles" }),
+        href: advancedTabHref("profiles"),
+      },
+      {
+        label:
+          mode === "edit"
+            ? t("profileWizardRoute.breadcrumbs.resumeDraft", { defaultValue: "Resume draft" })
+            : t("profileWizardRoute.breadcrumbs.newProfile", { defaultValue: "New profile" }),
+      },
     ]);
     return () => setBreadcrumbs([]);
-  }, [setBreadcrumbs, selectedCompany?.name, mode]);
+  }, [setBreadcrumbs, selectedCompany?.name, mode, t]);
 
   if (!selectedCompanyId) {
-    return <div className="p-6 text-sm text-muted-foreground">Select a company to create a profile.</div>;
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        {t("profileWizardRoute.selectCompany", { defaultValue: "Select a company to create a profile." })}
+      </div>
+    );
   }
 
   return (
@@ -45,10 +62,15 @@ export function ProfileWizardRoute({ mode }: { mode: "new" | "edit" }) {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 p-4 sm:p-6">
         <header>
           <h1 className="text-xl font-bold text-foreground">
-            {mode === "edit" ? "Finish your profile" : "New access profile"}
+            {mode === "edit"
+              ? t("profileWizardRoute.header.editTitle", { defaultValue: "Finish your profile" })
+              : t("profileWizardRoute.header.newTitle", { defaultValue: "New access profile" })}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose which tools this profile allows, then assign it to the agents that need them.
+            {t("profileWizardRoute.header.description", {
+              defaultValue:
+                "Choose which tools this profile allows, then assign it to the agents that need them.",
+            })}
           </p>
         </header>
         <ProfileWizard

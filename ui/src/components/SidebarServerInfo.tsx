@@ -2,12 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Clock3, FileDiff, GitCommit, type LucideIcon } from "lucide-react";
 import { healthApi, type HealthStatus } from "@/api/health";
 import { instanceSettingsApi } from "@/api/instanceSettings";
+import { t, useTranslation } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 
 function formatTimestamp(value: string | null | undefined): string {
-  if (!value) return "Unavailable";
+  if (!value) return t("sidebarServerInfo.unavailable", { defaultValue: "Unavailable" });
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unavailable";
+  if (Number.isNaN(date.getTime()))
+    return t("sidebarServerInfo.unavailable", { defaultValue: "Unavailable" });
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
@@ -24,27 +26,46 @@ function restartTimestamp(health: HealthStatus | undefined): string | null {
 
 function commitLabel(health: HealthStatus | undefined): string {
   const git = health?.serverInfo?.git;
-  if (!git?.available) return "Commit unavailable";
+  if (!git?.available)
+    return t("sidebarServerInfo.commit.unavailable", { defaultValue: "Commit unavailable" });
   return `${git.shortSha} · ${git.subject}`;
 }
 
 function localChangesLabel(health: HealthStatus | undefined): string {
   const git = health?.serverInfo?.git;
-  if (!git?.available) return "Unavailable";
+  if (!git?.available) return t("sidebarServerInfo.unavailable", { defaultValue: "Unavailable" });
   const localChanges = git.localChanges;
-  if (!localChanges) return "Change status unavailable";
-  if (!localChanges.available) return "Change status unavailable";
-  if (!localChanges.hasLocalChanges) return "Clean checkout";
+  if (!localChanges)
+    return t("sidebarServerInfo.changeStatus.unavailable", {
+      defaultValue: "Change status unavailable",
+    });
+  if (!localChanges.available)
+    return t("sidebarServerInfo.changeStatus.unavailable", {
+      defaultValue: "Change status unavailable",
+    });
+  if (!localChanges.hasLocalChanges)
+    return t("sidebarServerInfo.cleanCheckout", { defaultValue: "Clean checkout" });
 
   const parts = [
-    [localChanges.stagedFileCount, "staged"],
-    [localChanges.unstagedFileCount, "unstaged"],
-    [localChanges.untrackedFileCount, "untracked"],
+    [localChanges.stagedFileCount, t("sidebarServerInfo.localChanges.staged", { defaultValue: "staged" })],
+    [
+      localChanges.unstagedFileCount,
+      t("sidebarServerInfo.localChanges.unstaged", { defaultValue: "unstaged" }),
+    ],
+    [
+      localChanges.untrackedFileCount,
+      t("sidebarServerInfo.localChanges.untracked", { defaultValue: "untracked" }),
+    ],
   ]
     .filter(([count]) => Number(count) > 0)
     .map(([count, label]) => `${count} ${label}`);
 
-  return parts.length > 0 ? `Local changes present (${parts.join(", ")})` : "Local changes present";
+  return parts.length > 0
+    ? t("sidebarServerInfo.localChanges.presentWithDetails", {
+        defaultValue: "Local changes present ({{details}})",
+        details: parts.join(", "),
+      })
+    : t("sidebarServerInfo.localChanges.present", { defaultValue: "Local changes present" });
 }
 
 function ServerInfoRow({
@@ -78,6 +99,7 @@ function ServerInfoRow({
 }
 
 export function SidebarServerInfo() {
+  const { t } = useTranslation();
   const experimentalQuery = useQuery({
     queryKey: queryKeys.instance.experimentalSettings,
     queryFn: () => instanceSettingsApi.getExperimental(),
@@ -106,34 +128,42 @@ export function SidebarServerInfo() {
   const restartedAt = restartTimestamp(health);
   const restartedAtIsValid = isValidTimestamp(restartedAt);
   const lastRestartedLabel = healthUnavailable
-    ? "Health unavailable"
+    ? t("sidebarServerInfo.healthUnavailable", { defaultValue: "Health unavailable" })
     : isWaitingForHealth
-      ? "Loading..."
+      ? t("sidebarServerInfo.loading", { defaultValue: "Loading..." })
       : formatTimestamp(restartedAt);
   const commit = healthUnavailable
-    ? "Health unavailable"
+    ? t("sidebarServerInfo.healthUnavailable", { defaultValue: "Health unavailable" })
     : isWaitingForHealth
-      ? "Loading..."
+      ? t("sidebarServerInfo.loading", { defaultValue: "Loading..." })
       : commitLabel(health);
   const localChanges = healthUnavailable
-    ? "Health unavailable"
+    ? t("sidebarServerInfo.healthUnavailable", { defaultValue: "Health unavailable" })
     : isWaitingForHealth
-      ? "Loading..."
+      ? t("sidebarServerInfo.loading", { defaultValue: "Loading..." })
       : localChangesLabel(health);
 
   return (
     <div className="mt-2 border-t border-border pt-2">
       <p className="px-3 pb-1 pt-1 text-(length:--text-micro) font-medium uppercase tracking-wide text-muted-foreground">
-        Server
+        {t("sidebarServerInfo.serverHeading", { defaultValue: "Server" })}
       </p>
       <ServerInfoRow
         icon={Clock3}
-        label="Last restarted"
+        label={t("sidebarServerInfo.rows.lastRestarted", { defaultValue: "Last restarted" })}
         value={lastRestartedLabel}
         dateTime={!healthUnavailable && !isWaitingForHealth && restartedAtIsValid ? restartedAt : null}
       />
-      <ServerInfoRow icon={GitCommit} label="Running commit" value={commit} />
-      <ServerInfoRow icon={FileDiff} label="Checkout state" value={localChanges} />
+      <ServerInfoRow
+        icon={GitCommit}
+        label={t("sidebarServerInfo.rows.runningCommit", { defaultValue: "Running commit" })}
+        value={commit}
+      />
+      <ServerInfoRow
+        icon={FileDiff}
+        label={t("sidebarServerInfo.rows.checkoutState", { defaultValue: "Checkout state" })}
+        value={localChanges}
+      />
     </div>
   );
 }

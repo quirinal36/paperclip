@@ -6,6 +6,7 @@ import type {
   CompanySkillForkPrecheckResult,
 } from "@paperclipai/shared";
 import { useNavigate } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { companySkillsApi } from "@/api/companySkills";
 import { queryKeys } from "@/lib/queryKeys";
 import { skillStudioRoute } from "@/lib/company-skill-routes";
@@ -47,6 +48,7 @@ export function ForkSkillDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useOptionalToastActions();
@@ -111,11 +113,19 @@ export function ForkSkillDialog({
       const switched = result.reassignments.length;
       toast?.pushToast({
         tone: "success",
-        title: "Editing a copy",
+        title: t("forkSkillDialog.toast.editingCopyTitle", { defaultValue: "Editing a copy" }),
         body:
           switched > 0
-            ? `Created a copy of ${skill.name} and switched ${switched} ${switched === 1 ? "agent" : "agents"} to it.`
-            : `Created a copy of ${skill.name}. It's now editable.`,
+            ? t("forkSkillDialog.toast.copyCreatedSwitched", {
+                defaultValue_one: "Created a copy of {{name}} and switched {{count}} agent to it.",
+                defaultValue_other: "Created a copy of {{name}} and switched {{count}} agents to it.",
+                name: skill.name,
+                count: switched,
+              })
+            : t("forkSkillDialog.toast.copyCreated", {
+                defaultValue: "Created a copy of {{name}}. It's now editable.",
+                name: skill.name,
+              }),
       });
       onOpenChange(false);
       navigate(skillStudioRoute(result.skill.id));
@@ -123,8 +133,11 @@ export function ForkSkillDialog({
     onError: (error) => {
       toast?.pushToast({
         tone: "error",
-        title: "Couldn't create a copy",
-        body: error instanceof Error ? error.message : "The fork request failed.",
+        title: t("forkSkillDialog.toast.errorTitle", { defaultValue: "Couldn't create a copy" }),
+        body:
+          error instanceof Error
+            ? error.message
+            : t("forkSkillDialog.toast.errorFallback", { defaultValue: "The fork request failed." }),
       });
     },
   });
@@ -132,8 +145,12 @@ export function ForkSkillDialog({
   const busy = forkMutation.isPending;
   const forkLabel =
     reassign && agentCount > 0
-      ? `Create copy & switch ${agentCount} ${agentCount === 1 ? "agent" : "agents"}`
-      : "Create copy";
+      ? t("forkSkillDialog.actions.createCopyAndSwitch", {
+          defaultValue_one: "Create copy & switch {{count}} agent",
+          defaultValue_other: "Create copy & switch {{count}} agents",
+          count: agentCount,
+        })
+      : t("forkSkillDialog.actions.createCopy", { defaultValue: "Create copy" });
 
   const openExisting = () => {
     if (!reusableFork) return;
@@ -147,21 +164,32 @@ export function ForkSkillDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GitFork className="h-4 w-4" />
-            Edit a copy of {skill.name}
+            {t("forkSkillDialog.title", {
+              defaultValue: "Edit a copy of {{name}}",
+              name: skill.name,
+            })}
           </DialogTitle>
           <DialogDescription>
-            {skill.name} is read-only because it comes from an external source.
-            Creating a fully editable copy in your workspace leaves the original
-            untouched and still updatable.
+            {t("forkSkillDialog.description", {
+              defaultValue:
+                "{{name}} is read-only because it comes from an external source. Creating a fully editable copy in your workspace leaves the original untouched and still updatable.",
+              name: skill.name,
+            })}
           </DialogDescription>
         </DialogHeader>
 
         {reusableFork ? (
           <div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
-            <p className="font-medium text-foreground">You already have a copy</p>
+            <p className="font-medium text-foreground">
+              {t("forkSkillDialog.existingCopy.heading", {
+                defaultValue: "You already have a copy",
+              })}
+            </p>
             <p className="mt-0.5 text-muted-foreground">
-              An unedited copy of this skill already exists. Open it instead of
-              making another.
+              {t("forkSkillDialog.existingCopy.body", {
+                defaultValue:
+                  "An unedited copy of this skill already exists. Open it instead of making another.",
+              })}
             </p>
             <Button
               type="button"
@@ -170,7 +198,9 @@ export function ForkSkillDialog({
               onClick={openExisting}
               disabled={busy}
             >
-              Open your existing copy
+              {t("forkSkillDialog.existingCopy.openButton", {
+                defaultValue: "Open your existing copy",
+              })}
             </Button>
           </div>
         ) : null}
@@ -202,26 +232,37 @@ export function ForkSkillDialog({
               <label className="mt-3 flex items-start justify-between gap-3">
                 <span className="text-sm">
                   <span className="font-medium text-foreground">
-                    Switch these agents to the copy
+                    {t("forkSkillDialog.reassign.label", {
+                      defaultValue: "Switch these agents to the copy",
+                    })}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     {reassign
-                      ? "These agents will run your copy instead of the original."
-                      : "These agents keep running the original — your copy won't change what they do."}
+                      ? t("forkSkillDialog.reassign.onDescription", {
+                          defaultValue: "These agents will run your copy instead of the original.",
+                        })
+                      : t("forkSkillDialog.reassign.offDescription", {
+                          defaultValue:
+                            "These agents keep running the original — your copy won't change what they do.",
+                        })}
                   </span>
                 </span>
                 <ToggleSwitch
                   checked={reassign}
                   onCheckedChange={setReassign}
                   disabled={busy}
-                  aria-label="Switch these agents to the copy"
+                  aria-label={t("forkSkillDialog.reassign.label", {
+                    defaultValue: "Switch these agents to the copy",
+                  })}
                 />
               </label>
             </>
           ) : (
             <p className="mt-1 text-xs text-muted-foreground">
-              Nothing is assigned to it, so your copy won't change any agent's
-              behaviour.
+              {t("forkSkillDialog.noAgents", {
+                defaultValue:
+                  "Nothing is assigned to it, so your copy won't change any agent's behaviour.",
+              })}
             </p>
           )}
         </div>
@@ -233,7 +274,7 @@ export function ForkSkillDialog({
             onClick={() => onOpenChange(false)}
             disabled={busy}
           >
-            Cancel
+            {t("forkSkillDialog.actions.cancel", { defaultValue: "Cancel" })}
           </Button>
           <Button
             type="button"
@@ -242,7 +283,11 @@ export function ForkSkillDialog({
             disabled={busy}
           >
             {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-            {reusableFork ? "Create another copy" : forkLabel}
+            {reusableFork
+              ? t("forkSkillDialog.actions.createAnotherCopy", {
+                  defaultValue: "Create another copy",
+                })
+              : forkLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -13,27 +13,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "@/i18n";
 import { cn, relativeTime } from "@/lib/utils";
 
-const EVENT_LABEL: Record<CaseEventKind, string> = {
-  created: "created",
-  updated: "updated",
-  fields_changed: "fields changed",
-  status_changed: "status changed",
-  issue_linked: "issue linked",
-  issue_unlinked: "issue unlinked",
-  document_revised: "document revised",
-  child_linked: "child linked",
-  attachment_added: "attachment added",
-  label_added: "label added",
-  label_removed: "label removed",
-};
+type Translate = ReturnType<typeof useTranslation>["t"];
+
+/** Human label for an event kind, localized. */
+function eventLabel(t: Translate, kind: CaseEventKind): string {
+  const labels: Record<CaseEventKind, string> = {
+    created: t("caseActivityFeed.eventKind.created", { defaultValue: "created" }),
+    updated: t("caseActivityFeed.eventKind.updated", { defaultValue: "updated" }),
+    fields_changed: t("caseActivityFeed.eventKind.fieldsChanged", { defaultValue: "fields changed" }),
+    status_changed: t("caseActivityFeed.eventKind.statusChanged", { defaultValue: "status changed" }),
+    issue_linked: t("caseActivityFeed.eventKind.issueLinked", { defaultValue: "issue linked" }),
+    issue_unlinked: t("caseActivityFeed.eventKind.issueUnlinked", { defaultValue: "issue unlinked" }),
+    document_revised: t("caseActivityFeed.eventKind.documentRevised", { defaultValue: "document revised" }),
+    child_linked: t("caseActivityFeed.eventKind.childLinked", { defaultValue: "child linked" }),
+    attachment_added: t("caseActivityFeed.eventKind.attachmentAdded", { defaultValue: "attachment added" }),
+    label_added: t("caseActivityFeed.eventKind.labelAdded", { defaultValue: "label added" }),
+    label_removed: t("caseActivityFeed.eventKind.labelRemoved", { defaultValue: "label removed" }),
+  };
+  return labels[kind] ?? kind;
+}
 
 /** Human label for the actor, preferring the resolved agent name. */
-function actorLabel(event: CaseEvent): string {
-  if (event.actorType === "agent") return event.actorAgentName ?? "Agent";
-  if (event.actorType === "user") return "User";
-  return "System";
+function actorLabel(t: Translate, event: CaseEvent): string {
+  if (event.actorType === "agent")
+    return event.actorAgentName ?? t("caseActivityFeed.actor.agent", { defaultValue: "Agent" });
+  if (event.actorType === "user") return t("caseActivityFeed.actor.user", { defaultValue: "User" });
+  return t("caseActivityFeed.actor.system", { defaultValue: "System" });
+}
+
+function issueRelationLabel(t: Translate, event: CaseEvent): string {
+  return event.kind === "issue_linked" || event.kind === "issue_unlinked"
+    ? t("caseActivityFeed.relation.issue", { defaultValue: "issue" })
+    : t("caseActivityFeed.relation.via", { defaultValue: "via" });
 }
 
 function ActorIcon({ event }: { event: CaseEvent }) {
@@ -41,12 +55,9 @@ function ActorIcon({ event }: { event: CaseEvent }) {
   return <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />;
 }
 
-function issueRelationLabel(event: CaseEvent): string {
-  return event.kind === "issue_linked" || event.kind === "issue_unlinked" ? "issue" : "via";
-}
-
 /** One event with actor + run→issue attribution (P4 §1). */
 export function CaseEventRow({ event, compact = false }: { event: CaseEvent; compact?: boolean }) {
+  const { t } = useTranslation();
   const detail =
     event.kind === "status_changed" && event.payload
       ? `${(event.payload.previousStatus as string) ?? "?"} → ${(event.payload.status as string) ?? "?"}`
@@ -56,15 +67,15 @@ export function CaseEventRow({ event, compact = false }: { event: CaseEvent; com
       <span className="mt-1"><ActorIcon event={event} /></span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-1.5">
-          <span className="font-medium">{EVENT_LABEL[event.kind] ?? event.kind}</span>
+          <span className="font-medium">{eventLabel(t, event.kind)}</span>
           {detail && <span className="text-muted-foreground">· {detail}</span>}
         </div>
         <div className="flex flex-wrap items-center gap-x-1.5 text-muted-foreground">
-          <span>{actorLabel(event)}</span>
+          <span>{actorLabel(t, event)}</span>
           {event.issue && (
             <>
               <span aria-hidden>·</span>
-              <span>{issueRelationLabel(event)}</span>
+              <span>{issueRelationLabel(t, event)}</span>
               <Link
                 to={`/issues/${event.issue.identifier}`}
                 className="inline-flex min-w-0 items-center gap-1 text-foreground/80 hover:underline"
@@ -86,6 +97,7 @@ export function CaseEventRow({ event, compact = false }: { event: CaseEvent; com
 
 /** The full activity feed with kind filters (detail-page Activity tab). */
 export function CaseActivityFeed({ events }: { events: CaseEvent[] }) {
+  const { t } = useTranslation();
   const [active, setActive] = useState<Set<CaseEventKind>>(new Set());
 
   // Only offer filters for kinds actually present, in first-seen order.
@@ -110,20 +122,31 @@ export function CaseActivityFeed({ events }: { events: CaseEvent[] }) {
   }
 
   const filterLabel = active.size === 0
-    ? "All activity"
+    ? t("caseActivityFeed.filter.all", { defaultValue: "All activity" })
     : active.size === 1
-      ? EVENT_LABEL[[...active][0]!] ?? [...active][0]!
-      : `${active.size} filters`;
+      ? eventLabel(t, [...active][0]!)
+      : t("caseActivityFeed.filter.count", {
+          defaultValue: "{{filterCount}} filters",
+          filterCount: active.size,
+        });
 
   if (events.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">No activity yet.</p>;
+    return (
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        {t("caseActivityFeed.empty.noActivity", { defaultValue: "No activity yet." })}
+      </p>
+    );
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          {filtered.length} of {events.length} events
+          {t("caseActivityFeed.eventCount", {
+            defaultValue: "{{shown}} of {{total}} events",
+            shown: filtered.length,
+            total: events.length,
+          })}
         </p>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -134,9 +157,11 @@ export function CaseActivityFeed({ events }: { events: CaseEvent[] }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Activity filter</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              {t("caseActivityFeed.filter.label", { defaultValue: "Activity filter" })}
+            </DropdownMenuLabel>
             <DropdownMenuItem onSelect={() => setActive(new Set())}>
-              All activity
+              {t("caseActivityFeed.filter.all", { defaultValue: "All activity" })}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {presentKinds.map((kind) => (
@@ -145,14 +170,16 @@ export function CaseActivityFeed({ events }: { events: CaseEvent[] }) {
                 checked={active.has(kind)}
                 onCheckedChange={() => toggle(kind)}
               >
-                {EVENT_LABEL[kind] ?? kind}
+                {eventLabel(t, kind)}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
       {filtered.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No events match this filter.</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          {t("caseActivityFeed.empty.noMatch", { defaultValue: "No events match this filter." })}
+        </p>
       ) : (
         <div className="divide-y divide-border">
           {filtered.map((event) => (

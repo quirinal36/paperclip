@@ -11,6 +11,7 @@ import {
 } from "react";
 import { AlertTriangle, Check, Loader2, Paperclip, Send } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useTranslation } from "@/i18n";
 
 /**
  * Shared chat composer (PAP-95a / PAP-96).
@@ -113,7 +114,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
     value,
     onChange,
     onSubmit,
-    placeholder = "Message…",
+    placeholder,
     disabled = false,
     submitting = false,
     submitKey = "mod-enter",
@@ -121,7 +122,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
     tone = "standard",
     surface = "card",
     autoFocus = false,
-    sendLabel = "Send message",
+    sendLabel,
     onAttachFiles,
     attachments = [],
     attaching = false,
@@ -135,6 +136,13 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
   },
   forwardedRef,
 ) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder =
+    placeholder ?? t("chatComposer.placeholder.default", { defaultValue: "Message…" });
+  const resolvedSendLabel =
+    sendLabel ?? t("chatComposer.actions.send.label", { defaultValue: "Send message" });
+  const attachLabel = t("chatComposer.actions.attach.label", { defaultValue: "Attach files" });
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
@@ -254,7 +262,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
         >
           <span className="inline-flex items-center gap-2">
             <Paperclip className="h-3.5 w-3.5" />
-            Drop to attach
+            {t("chatComposer.dropOverlay.label", { defaultValue: "Drop to attach" })}
           </span>
         </div>
       ) : null}
@@ -265,7 +273,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         disabled={disabled}
         autoFocus={autoFocus}
         rows={1}
@@ -288,12 +296,13 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
             const sizeLabel = formatAttachmentSize(attachment.size);
             const statusLabel =
               attachment.status === "uploading"
-                ? "Uploading…"
+                ? t("chatComposer.attachment.status.uploading", { defaultValue: "Uploading…" })
                 : attachment.status === "error"
-                  ? attachment.error ?? "Upload failed"
+                  ? attachment.error ??
+                    t("chatComposer.attachment.status.uploadFailed", { defaultValue: "Upload failed" })
                   : attachment.inline
-                    ? "Inserted inline"
-                    : "Attached";
+                    ? t("chatComposer.attachment.status.insertedInline", { defaultValue: "Inserted inline" })
+                    : t("chatComposer.attachment.status.attached", { defaultValue: "Attached" });
             return (
               <div
                 key={attachment.id}
@@ -342,8 +351,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
               type="button"
               onClick={triggerFilePicker}
               disabled={disabled || attaching}
-              aria-label="Attach files"
-              title="Attach files"
+              aria-label={attachLabel}
+              title={attachLabel}
               className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               {attaching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
@@ -363,8 +372,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(fu
             if (canSend) onSubmit();
           }}
           disabled={!canSend}
-          aria-label={sendLabel}
-          title={sendLabel}
+          aria-label={resolvedSendLabel}
+          title={resolvedSendLabel}
           className={cn(
             "grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors duration-150 disabled:cursor-not-allowed",
             canSend

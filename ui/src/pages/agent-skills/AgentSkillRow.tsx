@@ -1,6 +1,7 @@
 import { Lock, type LucideIcon } from "lucide-react";
 import { Link } from "@/lib/router";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SkillCardIcon, type SkillIconCard } from "../../components/SkillCardIcon";
@@ -54,6 +55,7 @@ export function AgentSkillRow({
   disabledReason,
   onCheckedChange,
 }: AgentSkillRowProps) {
+  const { t } = useTranslation();
   const readOnly = variant === "readonly";
   const SourceIcon = data.sourceMeta?.icon;
 
@@ -105,7 +107,10 @@ export function AgentSkillRow({
   );
 
   const trailing = readOnly ? (
-    <Lock className="h-4 w-4 shrink-0 text-muted-foreground/60" aria-label="Read-only" />
+    <Lock
+      className="h-4 w-4 shrink-0 text-muted-foreground/60"
+      aria-label={t("agentSkillRow.readOnly.ariaLabel", { defaultValue: "Read-only" })}
+    />
   ) : (
     (() => {
       const toggle = (
@@ -113,7 +118,17 @@ export function AgentSkillRow({
           checked={checked}
           disabled={disabled}
           onCheckedChange={(next) => onCheckedChange?.(next)}
-          aria-label={`${checked ? "Disable" : "Enable"} ${data.name}`}
+          aria-label={
+            checked
+              ? t("agentSkillRow.toggle.disableAriaLabel", {
+                  defaultValue: "Disable {{name}}",
+                  name: data.name,
+                })
+              : t("agentSkillRow.toggle.enableAriaLabel", {
+                  defaultValue: "Enable {{name}}",
+                  name: data.name,
+                })
+          }
         />
       );
       if (disabled && disabledReason) {

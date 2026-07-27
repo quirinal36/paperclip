@@ -625,7 +625,7 @@ function WorkspaceOperationsSection({
                 <WorkspaceOperationStatusBadge status={operation.status} />
                 <div className="text-(length:--text-micro) text-muted-foreground">
                   {relativeTime(operation.startedAt)}
-                  {operation.finishedAt && ` to ${relativeTime(operation.finishedAt)}`}
+                  {operation.finishedAt && ` ${t("agentDetail.workspace.timeSeparator", { defaultValue: "to" })} ${relativeTime(operation.finishedAt)}`}
                 </div>
               </div>
               {operation.command && (

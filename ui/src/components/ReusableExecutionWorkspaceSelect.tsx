@@ -8,6 +8,7 @@ import {
   type ReusableWorkspaceOption,
 } from "@/lib/reusable-execution-workspaces";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 
 const COMPACT_TRIGGER_CLASS = "h-8 px-2 py-1.5 text-xs font-normal";
 
@@ -28,7 +29,7 @@ export function ReusableExecutionWorkspaceSelect<TWorkspace extends ReusableExec
   value,
   workspaces,
   onValueChange,
-  placeholder = "Choose an existing workspace",
+  placeholder,
   loading = false,
   error = false,
   disabled = false,
@@ -36,17 +37,24 @@ export function ReusableExecutionWorkspaceSelect<TWorkspace extends ReusableExec
   triggerClassName,
   disablePortal,
 }: ReusableExecutionWorkspaceSelectProps<TWorkspace>) {
+  const { t } = useTranslation();
   const groups = useMemo(() => buildReusableExecutionWorkspaceOptionGroups(workspaces), [workspaces]);
+  const resolvedPlaceholder =
+    placeholder ?? t("reusableExecutionWorkspaceSelect.placeholder", { defaultValue: "Choose an existing workspace" });
 
   return (
     <SearchableSelect<string, ReusableWorkspaceOption<TWorkspace>>
       value={value}
       groups={groups}
       onValueChange={onValueChange}
-      placeholder={placeholder}
-      searchPlaceholder="Search workspaces..."
-      emptyMessage={error ? "Workspaces failed to load." : "No matching workspaces."}
-      loadingMessage="Loading workspaces..."
+      placeholder={resolvedPlaceholder}
+      searchPlaceholder={t("reusableExecutionWorkspaceSelect.searchPlaceholder", { defaultValue: "Search workspaces..." })}
+      emptyMessage={
+        error
+          ? t("reusableExecutionWorkspaceSelect.errors.loadFailed", { defaultValue: "Workspaces failed to load." })
+          : t("reusableExecutionWorkspaceSelect.empty", { defaultValue: "No matching workspaces." })
+      }
+      loadingMessage={t("reusableExecutionWorkspaceSelect.loading", { defaultValue: "Loading workspaces..." })}
       loading={loading}
       disabled={disabled}
       className={className}

@@ -18,6 +18,7 @@ import { productivityReviewTriggerLabel } from "./ProductivityReviewBadge";
 import { hasAssignedBacklogBlocker } from "../lib/issue-blockers";
 import { ExternalObjectStatusSummary } from "./ExternalObjectStatusSummary";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation, t } from "@/i18n";
 
 type UnreadState = "hidden" | "visible" | "fading";
 
@@ -88,6 +89,7 @@ export function IssueRow({
   chevronInGuide = false,
   hideDivider = false,
 }: IssueRowProps) {
+  const { t } = useTranslation();
   const issuePathId = issue.identifier ?? issue.id;
   const identifier = issue.identifier ?? issue.id.slice(0, 8);
   // A row participates in the unread system whenever `unreadState` is supplied
@@ -116,7 +118,7 @@ export function IssueRow({
         "inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors",
         selected ? "hover:bg-muted/80" : "hover:bg-blue-500/20",
       )}
-      aria-label="Mark as read"
+      aria-label={t("issueRow.actions.markAsRead", { defaultValue: "Mark as read" })}
     >
       <span
         className={cn(
@@ -136,8 +138,8 @@ export function IssueRow({
         "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-300",
         selected ? "border-muted-foreground text-muted-foreground" : null,
       )}
-      title={`Productivity review: ${productivityReviewTriggerLabel(productivityReview.trigger)}`}
-      aria-label="Productivity review open"
+      title={t("issueRow.productivityReview.tooltip", { defaultValue: "Productivity review: {{trigger}}", trigger: productivityReviewTriggerLabel(productivityReview.trigger) })}
+      aria-label={t("issueRow.productivityReview.ariaLabel", { defaultValue: "Productivity review open" })}
     >
       <Eye className="h-2.5 w-2.5" aria-hidden />
     </span>
@@ -154,10 +156,10 @@ export function IssueRow({
     <Badge variant="outline"
       data-testid="issue-row-parked-blocker"
       className="[&>svg]:size-2.5 ml-1.5 gap-0.5 border-amber-500/60 bg-amber-500/15 text-(length:--text-nano) text-amber-700 dark:text-amber-300"
-      title="Blocked by parked work — at least one assigned blocker is in backlog and will not wake its assignee."
+      title={t("issueRow.parkedBlocker.tooltip", { defaultValue: "Blocked by parked work — at least one assigned blocker is in backlog and will not wake its assignee." })}
     >
       <Flag className="h-2.5 w-2.5" aria-hidden />
-      Blocked by parked work
+      {t("issueRow.parkedBlocker.label", { defaultValue: "Blocked by parked work" })}
     </Badge>
   ) : null;
 
@@ -293,10 +295,10 @@ export function IssueRow({
               }}
               disabled={archiveDisabled}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100 disabled:pointer-events-none disabled:opacity-30"
-              aria-label="Archive"
+              aria-label={t("issueRow.actions.archive", { defaultValue: "Archive" })}
             >
               <Archive className="h-3.5 w-3.5" />
-              Archive
+              {t("issueRow.actions.archive", { defaultValue: "Archive" })}
             </button>
           ) : null}
           {externalObjectSummary ? (
@@ -338,7 +340,7 @@ function renderRecoveryChip(action: IssueRecoveryAction, selected: boolean): Rea
         tone.className,
         selected ? "!border-muted-foreground !text-muted-foreground" : null,
       )}
-      title={`${label} — open the source task to act.`}
+      title={t("issueRow.recovery.tooltip", { defaultValue: "{{label}} — open the source task to act.", label })}
     >
       <Icon className="h-2.5 w-2.5" aria-hidden />
       {label}

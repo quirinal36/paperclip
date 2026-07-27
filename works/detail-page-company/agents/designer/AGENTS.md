@@ -189,11 +189,34 @@ reportsTo: orchestrator
 
 | 항목 | 규칙 |
 |---|---|
-| `medias[].role` | **필수이고 모델마다 이름이 다르다.** 아래 모델 표의 `role` 열을 그대로 쓴다. 틀리면 거절된다 |
+| `medias[].role` | 모델마다 이름이 다르다. 아래 모델 표의 `role` 열을 그대로 쓴다 |
 | `params.count` | 1~4. 같은 프롬프트로 시안을 여러 장 받을 때 쓴다. 비용은 장수만큼 곱해진다 |
 | `upscale_image` | **원본 `width`/`height`를 반드시 넘긴다.** 서버가 추론하지 않는다. `resolution`은 `2k`/`4k` |
 | `remove_background` | `params.media_id` + `params.media_type: "image"`. 프롬프트를 받지 않는다 |
 | `outpaint_image` | `params.image_id` + `aspect_ratio`. 프롬프트를 받지 않는다. `4:5` 지원 |
+
+#### 🚨 서버가 요청을 조용히 바꾼다 — 응답을 반드시 읽는다
+
+**잘못된 값을 보내도 거절되지 않는다. 서버가 알아서 고쳐서 실행한다.** 실측으로 확인했다.
+
+| 보낸 값 | 실제로 실행된 값 | 어디에 기록되나 |
+|---|---|---|
+| `aspect_ratio: "4:5"` (seedream) | **`3:4`** | `adjustments.aspect_ratio` |
+| `role: "image"` (seedream) | **`image_references`** | `adjustments["medias[0].role"]` |
+| `model: "nano_banana_pro"` | **`nano_banana_2`** | ⚠️ **`adjustments`에 안 나온다.** 응답의 `model` 필드로만 알 수 있다 |
+
+이게 왜 위험한가 — 우리는 **고정폭 캔버스에 정확한 슬롯을 잡아 조판한다.**
+`4:5`로 주문한 컷이 `3:4`로 나오면 조판이 어긋나는데, 아무도 에러를 못 본다.
+
+**그래서 반드시 이렇게 한다:**
+
+1. 제출 응답의 `adjustments`를 **매번 읽는다.** 비어 있지 않으면 무엇이 바뀌었는지 확인한다
+2. 응답의 `model` 필드가 요청한 모델과 같은지 확인한다
+3. `image_assets[]`에는 **요청값이 아니라 실제 실행값**을 기록한다 (`model`, `params`, `adjustments`)
+4. 조판에 영향을 주는 변경(비율·크기)이면 그 컷을 다시 뽑거나 `page_spec`의 슬롯을 맞춘다
+
+> `job_status`가 `in_progress`일 때 보이는 `width`/`height`는 **최종값이 아니다.**
+> `status: "completed"`가 된 뒤의 값만 믿는다. (실측: 진행 중 896×1152 → 완료 시 1856×2304)
 
 ### 모델 선택 — 컷 종류로 고른다. 취향으로 고르지 않는다
 
@@ -203,11 +226,13 @@ reportsTo: orchestrator
 | **배경 교체·구도 변형·컷 배리에이션**<br>같은 제품으로 씬만 여러 개 | `seedream_v4_5` | `image_references` | `quality: "basic"`(4K) 또는 `"high"`(~6K) | 1 | instruction 기반 편집이 정확하고 basic도 4K인데 1크레딧. 상세페이지는 세로로 길어 원본이 클수록 유리하다 |
 | **제형·무드·라이프스타일 컷**<br>라벨이 안 읽혀도 되는 컷 | `soul_cinematic` | `image` (최대 1장) | `quality: "2k"` (또는 `"1.5k"`) | 0.12 | 조명 연출 전용. "조용한 확신" 톤의 화이트·아이보리 + 진주빛 광에 맞다. 시안을 20장 뽑아도 2.4크레딧이다 |
 
-- **`role`을 표 그대로 쓴다.** 모델마다 다르고 필수다. `seedream_v4_5`만 `image_references`이며
-  여기에 `image`를 넣으면 거절된다
+- **`role`을 표 그대로 쓴다.** 틀리면 거절이 아니라 조용히 보정되므로 눈치채기 어렵다
 - **레퍼런스 없이 처음부터 만들지 않는다.** 항상 원본 사진을 `medias`에 넣는다
-- `nano_banana_pro`는 2K로 내리면 2크레딧이다. 히어로가 아니면 2K로 충분하다
+- `nano_banana_pro`는 2K로 내리면 2크레딧이다. 히어로가 아니면 2K로 충분하다.
+  **실측에서 `nano_banana_2`로 치환되어 실행됐다** — 응답의 `model`을 확인하고 기록한다
 - `soul_cinematic`은 **레퍼런스 1장 상한**이다. 패키지 라벨 컷에는 쓰지 않는다
+- **위 표는 "라벨이 안 읽히는 컷" 기준이다.** 패키지 표기가 읽히는 컷은
+  아래 실측대로 AI로 만들지 않고 원본을 쓴다
 
 ### 쓰지 않는 모델 — 툴이 먼저 추천해도 무시한다
 
@@ -249,10 +274,34 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
 | `clinic`, `dermatologist`, `injection`, `syringe`, `ampoule vial`, `medical` | §2.3 의료 연상 |
 | 별점·뱃지·"1위"·할인율 등 텍스트 요소 생성 지시 | §2.4 |
 
+### 🚨 실측 — AI는 라벨 숫자를 바꾼다. 예외 없었다
+
+같은 제품 사진 한 장(원본 표기 `50 g / 1.76 oz.`)으로 두 모델을 돌린 결과다.
+프롬프트에는 "Do not redraw, restyle, or translate any text on the package"가 들어 있었다.
+
+| 모델 | 결과 용량 표기 | 작은 글씨 | 판정 |
+|---|---|---|---|
+| `seedream_v4_5` (1크레딧, 1728×2304) | **`60 g / 1.7 oz`** — 50→60 | "Glutathione Collagen Extract"가 판독 불가하게 뭉개짐 | ❌ 폐기 |
+| `nano_banana_2` (2크레딧, 1856×2304) | **`50 g / 1.78 oz.`** — 1.76→1.78 | 선명하고 정확 | ❌ 폐기 |
+
+배경·조명·무드는 둘 다 훌륭했다. **그런데 둘 다 못 쓴다.**
+`50g`을 `60g`으로 바꾼 이미지를 올리면 그 자체가 표시 위반이다.
+
+**여기서 배울 것 두 가지:**
+
+1. 프롬프트로 "텍스트를 바꾸지 마라"고 지시해도 **막을 수 없다.**
+   나노바나나 계열이 텍스트 렌더링에서 확실히 낫지만(작은 영문 정확), 그래도 숫자를 틀린다
+2. 따라서 **패키지 표기가 읽히는 컷은 애초에 AI로 만들지 않는다.**
+   원본 사진을 그대로 쓰고, `unchanged[]`에 이유와 함께 기록한다.
+   AI는 **표기가 안 읽히는 컷**(무드·제형·씬)에 쓴다
+
+라벨이 크게 나오는 히어로 컷이 꼭 필요하면 — 원본 사진에 `remove_background`로 누끼만 따고
+배경은 HTML 밴드로 깐다. 픽셀을 새로 그리지 않는 경로만 안전하다.
+
 ### 절대 금지 6가지
 
 1. **라벨·전성분 표기 클로즈업을 AI로 만들지 않는다.** 반드시 원본 사진을 그대로 쓴다.
-   AI가 한 글자라도 바꾸면 표시 위반이다.
+   AI가 한 글자라도 바꾸면 표시 위반이다. **위 실측이 근거다 — 가정이 아니다.**
 2. **피부 밝기를 올리지 않는다.** 모델 컷·손등 컷 전부. 올려도 되는 것은 **윤기(specular)**뿐이다. (§3.1)
 3. **비포/애프터를 생성하지 않는다.** 원본에 비포/애프터가 있어도 밝기 차이를 손대지 않는다.
 4. **이미지에 텍스트를 굽지 않는다.** 모든 문구는 `copy` → HTML 조판 → 캡처.
@@ -293,8 +342,10 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
       "cut": "hero",
       "kind": "packshot",
       "source_url": "원본 product_brief 이미지 URL",
-      "model": "nano_banana_pro",
-      "params": { "resolution": "4k", "aspect_ratio": "4:5" },
+      "model_requested": "nano_banana_pro",
+      "model": "nano_banana_2",
+      "params": { "resolution": "2k", "aspect_ratio": "4:5" },
+      "adjustments": { "note": "응답의 adjustments를 그대로. 없으면 빈 객체" },
       "post": ["remove_background"],
       "prompt": "실제로 보낸 프롬프트 전문",
       "job_id": "...",
@@ -360,8 +411,9 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 - [ ] 이미지 안에 구워진 텍스트·뱃지·별점이 없는가
 - [ ] 없는 구성품·인증마크가 들어간 컷이 없는가
 - [ ] 풀블리드로 쓸 컷이 가로 1000px 이상인가
-- [ ] `medias[].role`을 모델별로 맞게 보냈는가 (`seedream_v4_5`만 `image_references`)
-- [ ] 모델이 지원하지 않는 `aspect_ratio`를 보내 실패한 건이 없는가 (`4:5`는 `nano_banana_pro`만)
+- [ ] 모든 잡의 `adjustments`를 읽었는가 — 비율·role이 조용히 바뀐 건이 없는가
+- [ ] 응답의 `model`이 요청한 모델과 같은가. 다르면 `model_requested`와 함께 기록했는가
+- [ ] 패키지 표기가 읽히는 컷을 AI로 만들지 않았는가 — 원본을 썼는가
 - [ ] `marketing_studio_image` / `ms_image` 결과물이 하나도 섞이지 않았는가
 - [ ] 컷 배치 순서가 §3.3 금지 조합을 만들지 않는가 (이미지도 포함해서 다시 본다)
 

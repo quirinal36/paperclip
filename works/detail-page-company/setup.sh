@@ -117,6 +117,28 @@ PROJECT_ID="$(echo "$PROJECTS_JSON" | jq -r '.[] | select(.name=="상세페이�
 
 [ -n "$ORCHESTRATOR_ID" ] || { echo "Orchestrator 에이전트를 못 찾았습니다."; exit 1; }
 
+echo
+echo "==> 6) 프로젝트 env 주입 (Supabase)"
+# 이게 없으면 Builder 가 렌더한 슬라이스가 런 임시 디렉터리에만 남고
+# 런이 끝나는 순간 통째로 사라진다. 실제로 한 번 12장을 잃었다.
+# heartbeat 가 project.env 를 실행 런 어댑터 설정에 병합해 프로세스로 넘긴다.
+if [ -n "$PROJECT_ID" ] && [ -f "$PKG_DIR/.env" ]; then
+  SUPABASE_URL_VAL="$(grep -oE '^SUPABASE_URL=.*' "$PKG_DIR/.env" | cut -d= -f2- || true)"
+  SUPABASE_KEY_VAL="$(grep -oE '^SUPABASE_SERVICE_ROLE_KEY=.*' "$PKG_DIR/.env" | cut -d= -f2- || true)"
+  if [ -n "$SUPABASE_URL_VAL" ] && [ -n "$SUPABASE_KEY_VAL" ]; then
+    jq -n --arg u "$SUPABASE_URL_VAL" --arg k "$SUPABASE_KEY_VAL" \
+      '{env:{SUPABASE_URL:$u, SUPABASE_SERVICE_ROLE_KEY:$k}}' > /tmp/dp-projenv.json
+    api PATCH "/api/projects/$PROJECT_ID" -d @/tmp/dp-projenv.json > /tmp/dp-projenv-out.json
+    rm -f /tmp/dp-projenv.json
+    echo "   주입된 키: $(jq -r '(.env // {}) | keys | join(", ")' /tmp/dp-projenv-out.json)"
+  else
+    echo "   !! .env 에 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 가 없습니다."
+    echo "      주입하지 않으면 렌더 결과가 저장되지 않고 사라집니다."
+  fi
+else
+  echo "   건너뜀 — PROJECT_ID 또는 .env 없음"
+fi
+
 cat > "$OUT_ENV" <<EOF
 # setup.sh 가 생성함 — 웹앱 .env.local 로 옮겨 쓰세요
 PAPERCLIP_BASE_URL=$PAPERCLIP_BASE_URL

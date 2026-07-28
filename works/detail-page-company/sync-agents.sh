@@ -7,7 +7,7 @@
 #
 # 하는 일 (파이프라인 6인만 대상 — Page / Founding Engineer 등은 건드리지 않는다)
 #   live/AGENTS.md  :=  shared/PREAMBLE.md  +  agents/<slug>/AGENTS.md
-#   live/COMPLIANCE.md, PRODUCT.md, CANVAS.md  :=  shared/ 의 최신본
+#   live/COMPLIANCE.md, PRODUCT.md, CANVAS.md, SELLING.md  :=  shared/ 의 최신본
 #
 # 안전장치
 #   · 기존 AGENTS.md 를 .bak-<타임스탬프> 로 백업한다
@@ -30,7 +30,7 @@ APPLY=false
 # slug → 에이전트 UUID 접두사
 declare -A TARGETS=(
   ["orchestrator"]="468d0e99"
-  ["analyst"]="b9f6beef"
+  ["analyst"]="fcc31caa"
   ["strategist"]="700050c7"
   ["designer"]="541f365a"
   ["builder"]="fc058caa"
@@ -84,6 +84,7 @@ for slug in "${!TARGETS[@]}"; do
   cp "$SHARED/COMPLIANCE.md" "$inst/COMPLIANCE.md"
   cp "$SHARED/PRODUCT.md"    "$inst/PRODUCT.md"
   cp "$SHARED/CANVAS.md"     "$inst/CANVAS.md"
+  cp "$SHARED/SELLING.md"    "$inst/SELLING.md"
   echo "  반영됨  $slug"
 done
 

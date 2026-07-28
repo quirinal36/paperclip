@@ -42,6 +42,20 @@ Read 툴로 **최소한 다음을 직접 연다**:
 
 → 문제 시 원인 단계: **strategy** (후킹 장치 자체가 약함) / **design** (장치는 맞는데 조판이 약함)
 
+## 검수 1-B: 밋밋함 — 규제 위반만큼 흔한 실패다
+
+**안 팔리는 페이지도 실패다**(`SELLING.md` §0). 규제를 지켰다고 통과시키지 않는다.
+
+- [ ] **회피 표현이 큰 글씨에 있는가** — "~일 수 있습니다", "~에 도움을 줄 수 있습니다",
+      "~인 편입니다", "많은 분들이". `display`·`headline`에 있으면 **`major`**
+- [ ] **숫자가 묻혀 있는가** — 700ppm · 98.2% · 300Da · 150만 개 · 4.9점이
+      본문 크기로 조용히 들어가 있으면 `major`. 이건 크게 써야 하는 무기다
+- [ ] 쓸 수 있는 무기를 안 썼는가 — `PRODUCT.md`에 근거가 있는데 페이지에 안 나온 것이 있는가
+- [ ] 효능을 못 쓰는 자리를 **경험**으로 채웠는가 (떼어내는 순간, 손에 안 묻음, 세안 불필요)
+- [ ] 문장이 `~습니다`로 길게 늘어져 덩어리로 안 보이는가
+
+→ 문제 시 원인 단계: **design** (무기 선택·순서 문제면 **strategy**)
+
 ## 검수 2: 콘텐츠
 
 - [ ] 제품 정보와 문구가 `product_brief`와 일치하는가
@@ -81,13 +95,38 @@ Read 툴로 **최소한 다음을 직접 연다**:
 - [ ] `tone_of_voice`가 페이지 전체에서 하나인가 (존댓말/구어체가 섞이지 않았는가)
 - [ ] 밴드 리듬이 살아 있는가 — 같은 배경이 3연속으로 이어지지 않는가
 
+### 사진 — 이 페이지가 전단지인가 상세페이지인가
+
+**슬라이스를 눈으로 보며 센다.** 문서에 적혀 있는지가 아니라 **이미지에 실제로 찍혔는지**를 본다.
+
+- [ ] 실제 사진이 **3장 이상** 보이는가 (`CANVAS.md` §5.4)
+- [ ] 스튜디오급 제품 단독 컷이 있는가
+- [ ] **사람 모델이 제품을 들고/쓰는 컷**이 있는가
+- [ ] **컨셉에 맞는 장소**에서 제품이 부각된 컷이 있는가
+- [ ] **"촬영 예정" 같은 플레이스홀더 프레임이 보이는가** — 하나라도 있으면 `blocker`
+- [ ] 사진이 컷 높이를 충분히 채우는가 — 작게 박아넣어 있으나 마나 하지 않은가
+- [ ] 세 장이 서로 다른 것을 말하는가
+
+모델 컷이 있으면 추가로:
+
+- [ ] 피부 밝기를 올린 흔적이 없는가 (§3.1) — 있으면 `regulatory` `blocker`
+- [ ] 모공·피부결이 남아 있는가. 매끄럽게 리터칭됐으면 효능 암시다
+- [ ] 비포/애프터 구도가 아닌가 (한 프레임 안 좌우 대비 포함)
+- [ ] 클리닉·흰 가운·의료기기·바이알이 배경에 없는가 (§2.3)
+
+제품이 크게 나온 컷은:
+
+- [ ] **패키지 라벨의 글자·숫자가 원본과 같은가** — 용량 표기를 특히 본다.
+      AI가 `50g`을 `60g`으로 바꾼 사례가 있다. 다르면 `regulatory` `blocker`
+
 ### 조판
 
 - [ ] 한 컷이 한 가지만 말하는가 (`page_spec.cuts[].says_one_thing` 대조)
 - [ ] 강조가 컷당 1개인가 — 전부 강조된 컷이 있는가
 - [ ] 여백이 충분한가 — 글자가 가장자리에 붙어 있지 않은가
 - [ ] 특정 컷이 지나치게 길지 않은가
-- [ ] 총 높이가 15,000px를 넘지 않는가
+- [ ] 총 높이가 과한가 — **사진 3종 때문에 길어진 것은 문제 삼지 않는다.**
+      길이를 지적할 때는 반드시 **줄일 텍스트 컷**을 함께 지목한다. 사진을 빼라고 하지 않는다
 
 → 문제 시 원인 단계: **design** (컷 순서·흐름 문제면 **strategy**)
 
@@ -123,9 +162,16 @@ Read 툴로 **최소한 다음을 직접 연다**:
     "seconds_to_understand": 2,
     "note": "첫 슬라이스만 보고 내린 판단"
   },
+  "photo_verdict": {
+    "photo_count": 3,
+    "has_hero_packshot": true,
+    "has_model_in_use": true,
+    "has_concept_scene": true,
+    "placeholders_found": []
+  },
   "issues": [
     {
-      "category": "hook | content | visual | render | regulatory",
+      "category": "hook | weak_selling | content | visual | photo | render | regulatory",
       "severity": "blocker | major | minor",
       "location": "detail_03.jpg / ingredient 컷 본문",
       "problem": "무엇이 잘못됐는지",
@@ -133,7 +179,7 @@ Read 툴로 **최소한 다음을 직접 연다**:
       "owner_stage": "analysis | strategy | design | build"
     }
   ],
-  "scores": { "hook": 0, "content": 0, "visual": 0, "render": 0 }
+  "scores": { "hook": 0, "selling": 0, "content": 0, "visual": 0, "photo": 0, "render": 0 }
 }
 ```
 
@@ -144,6 +190,8 @@ Read 툴로 **최소한 다음을 직접 연다**:
 - `blocker`가 하나라도 있으면 `verdict: "fail"`
 - `category: "regulatory"`는 **무조건 `blocker`**
 - `hook_verdict.stops_scroll == false` 이면 **`fail`** — 다른 점수가 아무리 높아도 그렇다
+- `photo_verdict.photo_count < 3` 이거나 3종 중 하나라도 없으면 **`fail`** (owner_stage: `design`)
+- `photo_verdict.placeholders_found`가 비어 있지 않으면 **`fail`**
 - `major`가 3개 이상이면 `fail`
 - 나머지는 `pass` (minor는 코멘트로만 남긴다)
 

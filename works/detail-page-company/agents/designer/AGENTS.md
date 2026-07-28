@@ -67,6 +67,33 @@ reportsTo: orchestrator
 
 > `meta.title` · `meta.description` 은 **만들지 않는다.** 이미지에는 검색 결과가 없다.
 
+### 카피 강도 — 확실한 것은 절대 작게 쓰지 않는다 (`SELLING.md`)
+
+`COMPLIANCE.md`는 **어떤 표현을 고를지**를 정한다. **얼마나 세게 말할지**는 정하지 않는다.
+애매한 표현을 빼는 것과 확실한 무기를 약하게 쓰는 것은 다른 일이다. 후자는 직무유기다.
+
+**회피 표현을 쓰지 않는다.** 법이 요구한 것이 아니라 불안해서 붙이는 말이고, 붙이면 카피가 죽는다.
+
+```
+❌ ~일 수 있습니다 / ~에 도움을 줄 수 있습니다 / ~인 편입니다 / 많은 분들이
+```
+
+필수 고지("개인차가 있을 수 있습니다", 집계 각주)는 **`notice`와 `footnote`에서만** 쓴다.
+`display`·`headline`에는 절대 넣지 않는다. **본문은 세게 쓰고 각주로 방어한다.**
+
+| 소극적 | 강하게 |
+|---|---|
+| "글루타치온이 함유되어 있습니다" | **글루타치온 700ppm** |
+| "많은 분들이 선택했습니다" | **150만 개** |
+| "사용이 편리할 수 있습니다" | **손에 안 묻습니다** |
+| "필오프 타입 팩입니다" | **한 번에 벗겨집니다** |
+| "가성비가 좋은 편입니다" | **1g당 358원** |
+
+- **숫자는 `display`나 `highlight`에 올린다.** 본문에 묻어두지 않는다
+- `~습니다`로 늘이지 말고 **명사형·단문으로 끊는다**
+- 효능을 말할 수 없으면 **경험을 말한다** — 떼어내는 순간, 손에 안 묻음, 세안 불필요.
+  제형과 사용 경험은 규제와 무관해 가장 자유롭게 쓸 수 있는 영역이다
+
 ### 카피 규칙 — 그래픽으로 쓴다
 
 - **한 줄 12자 이내, display는 2줄 이내.** 넘으면 이미지에서 덩어리로 안 보인다
@@ -160,6 +187,106 @@ reportsTo: orchestrator
 
 > ⚠️ **이미지도 광고다.** `COMPLIANCE.md`의 모든 규칙이 이미지에 그대로 적용된다.
 > 특히 §3.1(명도 변화 서사)은 카피보다 이미지에서 훨씬 쉽게, 훨씬 눈에 띄게 위반된다.
+
+---
+
+### 🎯 필수 사진 3종 — 이게 없으면 design 단계가 끝난 것이 아니다
+
+글자만 큰 페이지는 전단지다(`CANVAS.md` §5.4). **아래 3장을 반드시 만들어 낸다.**
+페이지가 길어지는 것은 감수한다. 사진을 빼서 짧게 만들지 않는다.
+
+| `photo_role` | 무엇을 만드는가 | 기본 제작 경로 |
+|---|---|---|
+| `hero_packshot` | 스튜디오급 제품 단독 컷 | **A. 누끼 합성** |
+| `model_in_use` | 사람 모델이 제품을 들고/쓰는 장면 | **B. 참조 생성** |
+| `concept_scene` | 컨셉에 맞는 장소에서 제품이 부각된 컷 | **A. 누끼 합성** |
+
+`page_spec.required_photo_cuts`에 세 자리가 지정돼 있다. 그 컷에 넣을 것을 만든다.
+3장은 최소치이며, 셋이 서로 다른 것을 말해야 한다. 같은 앵글 3장은 1장으로 센다.
+
+#### 경로를 정하는 기준 — 라벨이 읽히는가
+
+라벨 글자가 최종 캔버스에서 **읽히는 크기로 나오면 AI로 그리게 하지 않는다.**
+실측에서 두 모델 모두 용량 표기를 틀렸다(아래 실측 표 참조). 프롬프트로는 막히지 않는다.
+
+| 최종 배치 시 라벨 글자 | 경로 |
+|---|---|
+| 읽힌다 (캔버스 기준 14px 이상) | **A. 누끼 합성 필수.** 제품 픽셀은 원본 그대로 |
+| 형태만 보이고 못 읽는다 | B 허용. 단 브랜드 컬러·튜브 형태가 원본과 같은지 확인 |
+
+#### A. 누끼 합성 — 기본 경로. 제품 픽셀을 원본 그대로 보존한다
+
+제품을 새로 그리지 않으므로 **라벨이 100% 안전하다.** `hero_packshot`과 `concept_scene`은 이걸로 만든다.
+
+1. 원본 제품 사진 → `remove_background`(`media_type: "image"`) → 투명 PNG 누끼
+2. **제품이 없는 빈 장면/배경만** 생성한다 (`seedream_v4_5` 또는 `soul_cinematic`)
+   - 프롬프트에 제품을 묘사하지 않는다. 표면·조명·공간만 만든다
+   - 제품이 놓일 자리에 여백을 비워 달라고 지시한다
+3. `image_assets`에 배경과 누끼를 **각각** 기록하고, builder가 HTML에서 겹쳐 배치한다
+   (`composite: { background: "<id>", foreground: "<id>", placement: "center-lower" }`)
+
+> 스튜디오급 "향상"은 조명과 배경으로 만든다. 제품 자체를 다시 그려서 만들지 않는다.
+> 그림자·반사는 배경 생성 프롬프트에 넣거나 builder가 CSS로 얹는다.
+
+**배경 생성 프롬프트 예 (concept_scene)**
+
+```
+Empty scene, no product, no people, no text.
+{컨셉 장소 묘사 — concept.keywords 에서 도출}.
+Soft diffused daylight from the left, gentle falloff, clean uncluttered surface
+in the lower third with generous empty space for a product to be placed.
+Natural color, no color cast, photographic depth of field.
+```
+
+#### B. 참조 생성 — 모델 컷에만. 원본에 사람이 없으므로 불가피하다
+
+`model_in_use`는 원본 소재가 없어 생성해야 한다. 대신 제품을 작게 잡아 라벨 위험을 낮춘다.
+
+- 프롬프트에 **제품이 화면 폭의 25% 이하**로 들어가도록 지시한다
+- 원본 제품 사진을 `medias`에 넣어 형태·색을 참조시킨다
+- 결과에서 라벨 글자가 읽히면 **폐기**하거나, 그 부분을 누끼 원본으로 덮는다(A 경로 전환)
+
+**모델 컷 프롬프트 골격**
+
+```
+A {연령대} Korean woman in a bright home bathroom / vanity, holding the product
+in one hand at chest height, relaxed natural expression, looking at the product.
+The product occupies less than a quarter of the frame width.
+Keep the product's tube shape and brand color exactly as in the reference image.
+Natural skin with visible texture and pores, no retouching, no skin smoothing,
+no brightening. Even soft daylight. No text overlay. No clinical or medical setting.
+```
+
+#### 🚨 모델 컷 컴플라이언스 — 카피보다 이미지에서 훨씬 쉽게 위반된다
+
+사람 피부가 크게 나오는 컷이라 위험도가 가장 높다. 아래는 전부 **폐기 사유**다.
+
+| 금지 | 근거 |
+|---|---|
+| 피부 밝기를 올린 컷 | §3.1 명도 변화 서사. 올려도 되는 것은 **윤기(specular)**뿐 |
+| 피부를 매끄럽게 리터칭한 컷 | 모공·결이 사라지면 그 자체가 **효능 암시**다. 질감을 남긴다 |
+| 비포/애프터 구도 (한 프레임 안 좌우 대비 포함) | §3.1 |
+| 클리닉·흰 가운·의료기기·앰플 바이알이 보이는 배경 | §2.3 의료 연상 |
+| 얼굴에 제품을 바른 뒤 "달라진 얼굴"을 보여주는 구도 | 효능 표방 |
+| 실존 인물과 닮은 얼굴 | 초상권 |
+
+- 연령대는 `PRODUCT.md` 타겟에 맞춘다 — 메인 40·50대, 확장 25~39세.
+  **'나이 든 사람 취급'하는 연출은 금지**다(`PRODUCT.md` 타겟 항목)
+- 손 컷(얼굴 없이 손만)이 가장 안전하다. 얼굴이 꼭 필요한 컷이 아니면 손으로 간다
+
+#### 장소는 컨셉에서 나온다 (`concept_scene`)
+
+`concept.keywords`를 장소로 번역한다. 취향으로 고르지 않는다.
+
+| 컨셉 키워드 예 | 장소 |
+|---|---|
+| 홈에스테틱 · 조용한 확신 | 아침 햇살 드는 세면대 · 화장대 · 욕실 선반 |
+| 여름 · 산뜻함 | 창가 · 리넨 위 · 물기 있는 타일 |
+| 리추얼 · 30분 | 침실 협탁 · 소파 옆 사이드테이블 |
+
+**금지 장소**: 병원·시술실·클리닉 데스크·의료용 트레이 (§2.3)
+
+---
 
 ### 이 포맷에서 특히 중요한 것
 
@@ -340,13 +467,21 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
     {
       "id": "hero_packshot",
       "cut": "hero",
+      "photo_role": "hero_packshot | model_in_use | concept_scene | null",
       "kind": "packshot",
+      "production_path": "cutout_composite | reference_generated | original_unchanged",
+      "label_legible": false,
       "source_url": "원본 product_brief 이미지 URL",
       "model_requested": "nano_banana_pro",
       "model": "nano_banana_2",
       "params": { "resolution": "2k", "aspect_ratio": "4:5" },
       "adjustments": { "note": "응답의 adjustments를 그대로. 없으면 빈 객체" },
       "post": ["remove_background"],
+      "composite": {
+        "background": "bg_vanity_morning",
+        "foreground": "cutout_tube",
+        "placement": "center-lower"
+      },
       "prompt": "실제로 보낸 프롬프트 전문",
       "job_id": "...",
       "url": "최종 이미지 URL",
@@ -354,9 +489,14 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
       "width": 1600,
       "height": 2000,
       "transparent": true,
-      "compliance_check": "라벨 원본 일치 / 밝기 보정 없음 / 텍스트 없음"
+      "compliance_check": "라벨 원본 일치 / 밝기 보정 없음 / 피부 리터칭 없음 / 텍스트 없음"
     }
   ],
+  "required_photo_set": {
+    "hero_packshot": "hero_packshot",
+    "model_in_use": "model_hand_apply",
+    "concept_scene": "scene_vanity_morning"
+  },
   "unchanged": [
     { "source_url": "...", "reason": "전성분 표기 클로즈업 — 원본 그대로 사용" }
   ],
@@ -366,7 +506,8 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
 }
 ```
 
-`kind`는 `packshot` · `cutout` · `texture` · `scene` · `mood` 중 하나다.
+`kind`는 `packshot` · `cutout` · `background` · `model` · `texture` · `scene` · `mood` 중 하나다.
+`required_photo_set`의 세 값은 **`image_assets[].id`를 가리켜야 한다.** 비어 있으면 미완료다.
 
 > `alt` 필드는 만들지 않는다. 최종 결과물이 이미지라 alt는 존재하지 않는다.
 > **그 대신 이미지 위에 얹히는 카피가 심의 대상이다.** `copy`를 §1 허용 표현으로 쓰는 것이
@@ -395,6 +536,8 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 - [ ] `highlight`가 컷당 1개, 3~7자인가
 - [ ] 말투가 `tone_of_voice` 하나로 고정돼 있는가
 - [ ] `forbidden_claims` 표현을 쓰지 않았는가
+- [ ] **회피 표현("~일 수 있습니다", "~인 편입니다", "많은 분들이")이 `display`·`headline`에 없는가**
+- [ ] **숫자가 `display`나 `highlight`에 올라가 있는가** — 본문에 묻히지 않았는가
 - [ ] 버튼 문구·링크 유도 문구("자세히 보기", "클릭")가 없는가
 
 디자인
@@ -404,7 +547,23 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 - [ ] `band_order`에 같은 밴드가 3연속 나오지 않는가
 - [ ] 애니메이션·hover 토큰을 정의하지 않았는가
 
-이미지
+필수 사진 3종
+
+- [ ] `required_photo_set`의 세 자리가 모두 실제 `image_assets[].id`로 채워졌는가
+- [ ] `hero_packshot` · `model_in_use` · `concept_scene`이 **서로 다른 것을 말하는가**
+- [ ] "촬영 예정" 플레이스홀더로 때운 자리가 없는가 — 빈 프레임은 사진이 아니다
+- [ ] 라벨이 읽히는 컷을 `reference_generated`로 만들지 않았는가 (`label_legible` 대조)
+- [ ] `concept_scene`의 장소가 `concept.keywords`에서 도출됐는가 — 취향으로 고르지 않았는가
+
+모델 컷 (있는 경우)
+
+- [ ] 피부 밝기를 올리지 않았는가
+- [ ] 모공·피부결이 남아 있는가 — 매끄럽게 리터칭한 컷은 효능 암시다
+- [ ] 비포/애프터 구도가 아닌가 (한 프레임 안 좌우 대비 포함)
+- [ ] 클리닉·흰 가운·의료기기·바이알이 배경에 없는가 (§2.3)
+- [ ] 연령대가 `PRODUCT.md` 타겟에 맞는가. '나이 든 사람 취급' 연출이 아닌가
+
+이미지 공통
 
 - [ ] 모든 결과물의 패키지 라벨이 원본과 **글자 단위로** 같은가
 - [ ] 피부 밝기를 올린 컷이 하나도 없는가 (§3.1)
@@ -420,4 +579,8 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 ## 완료 조건
 
 `copy` · `design_tokens` · `image_assets` 저장 → 체크리스트 결과와
-**생성 컷 수 / 폐기 컷 수 / 사용 크레딧**을 코멘트로 남기고 `done`.
+**필수 사진 3종 충족 여부 / 생성 컷 수 / 폐기 컷 수 / 사용 크레딧**을 코멘트로 남기고 `done`.
+
+> **사진 3종이 안 채워졌으면 `done`으로 바꾸지 않는다.**
+> 소재가 없어 못 만들면 `blocked`로 바꾸고 무엇이 필요한지 적는다.
+> 플레이스홀더로 자리만 잡아 놓고 넘기는 것이 가장 나쁜 결과다 — 아무도 문제를 못 본 채 페이지가 나간다.

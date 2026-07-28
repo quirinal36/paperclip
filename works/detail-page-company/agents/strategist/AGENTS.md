@@ -83,11 +83,31 @@ reportsTo: orchestrator
       "composition": "cutout-with-copy",
       "est_height": 1300,
       "image": "hero_packshot",
+      "photo_role": "hero_packshot",
       "must_show": ["누끼 제품 컷", "제형 3종 설명"]
     }
-  ]
+  ],
+  "required_photo_cuts": {
+    "hero_packshot": "hero",
+    "model_in_use": "experience",
+    "concept_scene": "turning_point"
+  }
 }
 ```
+
+### 필수 사진 3종을 위한 컷을 반드시 잡는다 (`CANVAS.md` §5.4)
+
+글자만 큰 페이지는 전단지다. **사진이 최소 3장 들어가야 하고, 그 자리를 여기서 정한다.**
+
+| `photo_role` | 무엇을 보여주는 컷인가 | 보통 여기에 |
+|---|---|---|
+| `hero_packshot` | 스튜디오급 제품 단독 | `hero` |
+| `model_in_use` | **사람 모델이 제품을 들고/쓰는 장면** | `experience` · `how_to_use` |
+| `concept_scene` | **컨셉에 맞는 장소**에서 제품이 부각된 컷 | `turning_point` · `core_benefit` |
+
+- 세 컷의 `est_height`는 **1,200px 이상**으로 잡는다. 사진이 작으면 넣으나 마나다
+- `photo_role`을 해당 컷에 명시하고 `required_photo_cuts`에 매핑을 적는다
+- 세 자리를 못 잡으면 컷 구성이 잘못된 것이다. 텍스트 컷을 줄여서라도 확보한다
 
 ### 컷 역할 (id) — 필요한 것만 고른다
 
@@ -115,9 +135,14 @@ reportsTo: orchestrator
 ## 규칙
 
 - **이 단계에서 HTML을 만들지 않는다.** 청사진을 먼저 확정해야 이후 수정 비용이 줄어든다
+- **가장 센 무기를 첫 컷에 쓴다.** 아껴두지 않는다. 끝까지 읽는 사람은 소수다.
+  `SELLING.md` §1의 합법 무기고에서 고른다 — 숫자(700ppm·150만 개·4.9점) 또는
+  눈에 보이는 경험(한 번에 벗겨짐)이 대개 가장 강하다
+- **안전해 보여서 밋밋한 흐름을 짜지 않는다.** 규제 위반도 실패지만 안 팔리는 페이지도 실패다
 - **컷 하나는 한 가지만 말한다.** `says_one_thing`을 한 문장으로 못 쓰면 컷을 쪼갠다
-- 컷 수는 **8~14개**, 전체 높이 **6,000~12,000px**를 목표로 한다.
-  15,000px를 넘으면 끝까지 보는 사람이 없다
+- 컷 수는 **8~14개**, 전체 높이 **8,000~14,000px**를 목표로 한다.
+  **사진 3종을 넣느라 길어지는 것은 감수한다** — 사진을 빼서 짧게 만들지 않는다.
+  길이를 줄여야 하면 **텍스트 컷을 먼저 줄인다**
 - `est_height`는 컷마다 적는다. 합계가 `canvas.estimated_height`다.
   높이를 안 적으면 designer가 카피 분량을 정할 수 없다
 - 컷 순서가 `COMPLIANCE.md` §3.3 **금지 조합**을 만들지 않는지 확인한다.
@@ -127,4 +152,6 @@ reportsTo: orchestrator
 ## 완료 조건
 
 `strategy`와 `page_spec` 두 문서를 모두 저장하고, 코멘트에
-**컷 목록 · 총 예상 높이 · 첫 컷 후킹 장치**를 요약한 뒤 `done`.
+**컷 목록 · 총 예상 높이 · 첫 컷 후킹 장치 · 사진 3종이 들어갈 컷**을 요약한 뒤 `done`.
+
+`required_photo_cuts`의 세 자리가 모두 채워졌는지 저장 전에 확인한다. 비어 있으면 미완료다.

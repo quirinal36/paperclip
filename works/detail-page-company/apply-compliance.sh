@@ -6,6 +6,7 @@
 #     · COMPLIANCE.md  (광고 심의 가드레일)
 #     · PRODUCT.md     (대상 제품 사실)
 #     · CANVAS.md      (상세페이지 포맷 계약 — 세로 긴 이미지)
+#     · SELLING.md     (장점 극대화 원칙 — 합법 무기고와 강도 규칙)
 #   을 복사하고, AGENTS.md 앞에 PREAMBLE(필수 선행 규칙)을 한 번만 삽입한다.
 #
 # 안전장치
@@ -35,7 +36,7 @@ APPLY=false
 # (Reflection Coach / Summarizer 같은 built-in 은 제외)
 declare -A TARGETS=(
   ["468d0e99-2e42-45c1-95ab-fb5533cc1153"]="Orchestrator"
-  ["b9f6beef"]="Analyst"
+  ["fcc31caa"]="Analyst"
   ["700050c7"]="Strategist"
   ["541f365a"]="Designer"
   ["fc058caa"]="Builder"
@@ -80,6 +81,7 @@ for prefix in "${!TARGETS[@]}"; do
   cp "$SHARED/COMPLIANCE.md" "$inst/COMPLIANCE.md"
   cp "$SHARED/PRODUCT.md"    "$inst/PRODUCT.md"
   cp "$SHARED/CANVAS.md"     "$inst/CANVAS.md"
+  cp "$SHARED/SELLING.md"    "$inst/SELLING.md"
 
   if $has_preamble; then
     echo "  갱신됨  $name  (공유 문서만 — PREAMBLE 은 이미 있음)"

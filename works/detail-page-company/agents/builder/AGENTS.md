@@ -117,6 +117,41 @@ font-family: Pretendard, -apple-system, BlinkMacSystemFont,
   내보내기 후 해당 컷이 빈칸인지 반드시 확인하고, 빈칸이면 blocked로 알린다
 - 누끼 PNG(`transparent: true`)는 밴드 배경 위에 겹쳐 배치한다
 
+### 합성 컷 — `composite`가 있는 항목
+
+designer가 **배경과 제품 누끼를 따로** 넘긴다. 제품 픽셀을 원본 그대로 보존하기 위한 구조다
+(AI가 라벨 숫자를 바꾸기 때문). 이걸 HTML에서 겹쳐 한 장처럼 보이게 조판한다.
+
+```html
+<div class="dp-composite">
+  <img class="dp-bg" src="{composite.background 의 url}" width="1000" height="1250" loading="eager">
+  <img class="dp-fg" src="{composite.foreground 의 url}" width="520" height="650" loading="eager">
+</div>
+```
+
+```css
+.dp-composite { position: relative; width: 1000px; height: 1250px; overflow: hidden; }
+.dp-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dp-fg { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); }
+/* placement: center-lower 예시. center / center-lower / lower-right 를 좌표로 옮긴다 */
+```
+
+- `position: absolute`는 **컷 내부에서만** 쓴다. `fixed`/`sticky`는 여전히 금지다
+- 누끼 PNG는 투명 배경이므로 **뒤에 반드시 배경이 깔려 있어야 한다.**
+  배경 없이 놓으면 캡처에서 흰 바탕에 뜬 것처럼 나온다
+- 그림자가 필요하면 `filter: drop-shadow(...)`로 누끼에 얹는다. 이미지에 굽지 않는다
+- 합성 결과를 내보낸 뒤 **해당 슬라이스를 직접 열어** 제품이 배경에 자연스럽게 앉았는지 본다.
+  떠 보이면 그림자·크기·위치를 조정한다
+
+### 필수 사진 3종은 크게 배치한다
+
+`image_assets[].photo_role`이 붙은 3장(`hero_packshot` · `model_in_use` · `concept_scene`)은
+이 페이지의 시각적 근거다. **컷 높이를 충분히 채우도록 배치한다** — 작게 박아 넣으면 넣으나 마나다.
+가로는 캔버스 폭(1000px)을 꽉 채우거나 좌우 여백을 최소로 둔다.
+
+**"촬영 예정" 같은 플레이스홀더 프레임을 만들지 않는다.** 이미지가 없으면 그 사실이 드러나야 한다 —
+디자인된 빈 프레임으로 때우면 아무도 문제를 못 본 채 페이지가 나간다. 없으면 `blocked`로 알린다.
+
 ### 절대 쓰지 않는 것
 
 ```
@@ -240,12 +275,26 @@ const MAX = 2000;    // design_tokens.canvas.slice_max_height
    경계가 글자나 얼굴을 가로지르는지 확인하고, 그렇다면 컷을 나누도록 조판을 고친다
 5. 슬라이스 1장이 2MB를 넘으면 quality를 낮추거나 컷을 더 쪼갠다
 
-### 보관
+### 보관 — 여기서 실패하면 렌더한 게 전부 사라진다
 
-`out/*.jpg`를 Supabase `product-images` 버킷의 `rendered/{issueId}/` 아래로 업로드하고
-public URL을 `page_images.slices[].url`에 채운다.
-`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`가 없으면 로컬 경로를 그대로 두고
-`persisted: false`와 함께 코멘트에 명시한다.
+**런 작업 디렉터리(`/tmp/paperclip-run-.../`)는 런이 끝나면 삭제된다.**
+실제로 12장을 통째로 잃은 적이 있다. 렌더는 성공했는데 아무것도 남지 않았다.
+
+1. **먼저 워크스페이스에 복사한다.** 업로드보다 이걸 먼저 한다.
+   ```
+   /home/leehg/Documents/workspace/detail-page-workspace/out/{issueId}/
+   ```
+   워크스페이스는 런과 무관하게 유지되므로, 업로드가 실패해도 파일은 살아남는다
+2. `out/*.jpg`를 Supabase `product-images` 버킷 `rendered/{issueId}/` 아래로 업로드하고
+   public URL을 `page_images.slices[].url`에 채운다 (`persisted: true`)
+3. 업로드에 성공해도 워크스페이스 사본을 지우지 않는다
+
+`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`는 **프로젝트 env로 주입된다.**
+`env | grep SUPABASE`로 먼저 확인하고 시작한다.
+
+- 값이 있는데 업로드가 실패하면 → 원인을 코멘트에 적고 `persisted: false`
+- **값이 아예 없으면 `blocked`로 바꾼다.** 예전에는 "페이지는 나가야 한다"며 그냥 진행했지만,
+  그 결과가 유실이었다. 워크스페이스 사본은 남기되 사람에게 알린다
 
 ### `page_images` 최종 포맷
 
@@ -257,6 +306,7 @@ public URL을 `page_images.slices[].url`에 채운다.
   "slices": [
     { "index": 1, "file": "detail_01.jpg", "y": 0, "height": 1980,
       "cuts": ["hook", "hero"], "forced": false, "bytes": 412000,
+      "workspace_path": "/home/leehg/Documents/workspace/detail-page-workspace/out/{issueId}/detail_01.jpg",
       "url": "https://.../rendered/{issueId}/detail_01.jpg", "persisted": true }
   ],
   "preview_full": { "file": "detail_full.jpg", "url": "https://..." },

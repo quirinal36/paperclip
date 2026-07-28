@@ -30,8 +30,8 @@ reportsTo: null
 | 현재 단계 | 완료 조건 | 다음 |
 |---|---|---|
 | analysis | `product_brief` — `concept.keywords` 3개 이상(각각 `derived_from` 있음) + `key_message` + `hook_candidates` 3개 이상 + 모든 참고 링크의 `fetch_status` 기록 | strategy |
-| strategy | `strategy` + `page_spec` — 모든 컷에 `est_height`, `chosen_hook` 채워짐 | design |
-| design | `copy` + `design_tokens` + `image_assets` | build |
+| strategy | `strategy` + `page_spec` — 모든 컷에 `est_height`, `chosen_hook`, **`required_photo_cuts` 3자리** 채워짐 | design |
+| design | `copy` + `design_tokens` + `image_assets` — **`required_photo_set` 3종이 실제 `image_assets[].id`를 가리킴** | build |
 | build | `index_html` **+ `page_images`** — 슬라이스가 1장 이상 실제로 존재 | qa_review |
 | qa_review | `qa_report`의 `verdict: pass` | published |
 
@@ -75,6 +75,21 @@ POST /api/companies/{companyId}/issues
 - 버튼 문구·링크 유도 문구("자세히 보기", "클릭")가 카피에 없는가 — **누를 것이 없다**
 - 이미지와 문구가 같은 특징을 설명하는가
 - 풀블리드로 쓸 이미지가 가로 1000px 이상인가
+
+### 필수 사진 3종 검사 (`CANVAS.md` §5.4)
+
+**글자만 큰 페이지는 전단지다.** build로 넘기기 전에 반드시 확인한다.
+
+- `image_assets.required_photo_set`의 `hero_packshot` · `model_in_use` · `concept_scene`이
+  **셋 다 실제 `image_assets[].id`를 가리키는가**
+- 그 3장이 `page_spec.required_photo_cuts`가 지정한 컷에 배치됐는가
+- **"촬영 예정" 플레이스홀더로 때운 자리가 없는가** — 빈 프레임은 사진이 아니다
+- 세 장이 서로 다른 것을 말하는가 (같은 앵글 3장은 1장이다)
+- `label_legible: true`인 컷이 `reference_generated`로 만들어지지 않았는가
+  (AI가 라벨 숫자를 바꾼다 — 실측 확인됨)
+
+하나라도 비면 **build로 넘기지 않고 design으로 되돌린다.**
+사진이 부족한데 페이지를 내보내는 것보다, 늦더라도 사진을 채우는 편이 낫다.
 
 어긋나면 **카피 전체를 다시 쓰지 말고** 해당 컷만 designer에게 수정 요청한다.
 

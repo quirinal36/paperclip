@@ -212,6 +212,14 @@ reportsTo: orchestrator
 `page_spec.required_photo_cuts`에 세 자리가 지정돼 있다. 그 컷에 넣을 것을 만든다.
 3장은 최소치이며, 셋이 서로 다른 것을 말해야 한다. 같은 앵글 3장은 1장으로 센다.
 
+#### 제품 주인공 스케일 — 크게 보여주는 것이 기본
+
+- hero_packshot과 concept_scene은 subject_scale을 hero_dominant로 기록하고, 제품 foreground가 캔버스 폭의 55~75%, 섹션 높이의 55~80%를 차지하도록 만든다.
+- 제품 주인공 컷의 출력은 1000px 캔버스 폭과 1,200px 이상 섹션을 기준으로 한다. 제품을 작은 카드나 인셋으로 축소하지 않는다.
+- 누끼 합성에서는 제품 전체와 라벨이 보이는 범위에서 foreground를 충분히 키우고, 비율을 유지한다. 용기·뚜껑·라벨을 자르거나 제품을 카피 뒤로 숨기지 않는다.
+- model_in_use는 사용 장면을 읽히게 하는 예외로 제품이 캔버스 폭의 25% 이하일 수 있다. 이 경우에도 hero_packshot 또는 concept_scene에는 제품을 거의 한 섹션 가득 보여주는 별도 asset을 만든다.
+- image_assets에는 subject_scale과 subject_coverage를 실제 제작 의도대로 기록한다. 요청값만 적고 작은 결과물을 통과시키지 않는다.
+
 #### 경로를 정하는 기준 — 라벨이 읽히는가
 
 라벨 글자가 최종 캔버스에서 **읽히는 크기로 나오면 생성 모델에게 다시 그리게 하지 않는다.**
@@ -484,6 +492,8 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
       "id": "hero_packshot",
       "cut": "hero",
       "photo_role": "hero_packshot | model_in_use | concept_scene | null",
+      "subject_scale": "hero_dominant | context",
+      "subject_coverage": { "width_percent": "55-75", "height_percent": "55-80" },
       "kind": "packshot",
       "source_kind": "issue_attachment",
       "production_path": "higgsfield_cutout_composite | higgsfield_product_reference_generated | higgsfield_generated_scene | higgsfield_processed_product",
@@ -570,6 +580,9 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 필수 사진 3종
 
 - [ ] `required_photo_set`의 세 자리가 모두 실제 `image_assets[].id`로 채워졌는가
+- [ ] `hero_packshot`과 `concept_scene`이 `hero_dominant` 스케일이고 제품이 작은 썸네일처럼 보이지 않는가
+- [ ] 제품 주인공 컷의 `subject_coverage`가 폭 55~75%, 높이 55~80% 기준을 충족하는가
+- [ ] `model_in_use`에서 제품이 작다면 별도의 제품 주인공 컷이 함께 존재하는가
 - [ ] `hero_packshot` · `model_in_use` · `concept_scene`이 **서로 다른 것을 말하는가**
 - [ ] "촬영 예정" 플레이스홀더로 때운 자리가 없는가 — 빈 프레임은 사진이 아니다
 - [ ] 라벨이 읽히는 컷을 생성 모델로 다시 그리지 않았는가 — Higgsfield 비생성 처리 결과를 썼는가 (`label_legible` 대조)

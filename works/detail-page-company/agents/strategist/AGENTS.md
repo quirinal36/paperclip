@@ -146,6 +146,8 @@ reportsTo: orchestrator
       "est_height": 1300,
       "image": "hero_packshot",
       "photo_role": "hero_packshot",
+      "subject_scale": "hero_dominant",
+      "subject_coverage": { "width_percent": "55-75", "height_percent": "55-80" },
       "must_show": ["누끼 제품 컷", "제형 3종 설명"]
     }
   ],
@@ -170,6 +172,16 @@ reportsTo: orchestrator
 - 세 컷의 `est_height`는 **1,200px 이상**으로 잡는다. 사진이 작으면 넣으나 마나다
 - `photo_role`을 해당 컷에 명시하고 `required_photo_cuts`에 매핑을 적는다
 - 세 자리를 못 잡으면 컷 구성이 잘못된 것이다. 텍스트 컷을 줄여서라도 확보한다
+
+### 제품 스케일 — 작은 제품은 실패로 본다
+
+제품은 상세페이지의 주인공이므로 사진을 작은 장식처럼 배치하지 않는다.
+
+- hero_packshot과 concept_scene 컷에는 subject_scale을 hero_dominant로 지정한다.
+- 두 컷의 subject_coverage는 기본값으로 width 55~75%, height 55~80%를 기록하고, est_height는 각각 1,200px 이상으로 잡는다.
+- 카피가 많아 제품이 작아질 것 같으면 카피를 줄이거나 컷을 나눈다. 제품을 축소해 텍스트를 한 칸에 억지로 넣지 않는다.
+- model_in_use는 사용 맥락을 보여주는 예외라서 제품이 작아도 되지만, required_photo_cuts에 hero_packshot 또는 concept_scene 제품 주인공 컷이 반드시 함께 있어야 한다.
+- 이미지가 들어가는 cuts에는 subject_scale과 subject_coverage를 누락하지 않는다.
 
 ### 컷 역할 (id) — 필요한 것만 고른다
 

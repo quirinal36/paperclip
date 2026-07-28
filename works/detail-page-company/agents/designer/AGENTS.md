@@ -249,7 +249,7 @@ Natural color, no color cast, photographic depth of field.
 
 #### B. 참조 생성 — 모델 컷에만. 사람은 새로 만들고 제품만 참조한다
 
-`model_in_use`는 원본 소재가 없어 생성해야 한다. 대신 제품을 작게 잡아 라벨 위험을 낮춘다.
+`model_in_use`는 원본 소재가 없어 생성해야 한다. 제품 타겟 고객의 연령과 별개로, 이 컷의 광고 비주얼 모델은 20대 한국 여성으로 캐스팅한다. 제품을 작게 잡아 라벨 위험을 낮춘다.
 
 - 프롬프트에 **제품이 화면 폭의 25% 이하**로 들어가도록 지시한다
 - 첨부 상품 이미지에서 생성·처리한 제품 asset만 `medias`에 넣어 형태·색을 참조시킨다. 사람·얼굴·장면 이미지는 넣지 않는다
@@ -258,13 +258,16 @@ Natural color, no color cast, photographic depth of field.
 **모델 컷 프롬프트 골격**
 
 ```
-Generate a fictional, non-identifiable Korean woman; do not resemble any person in a reference image.
-A {연령대} Korean woman in a bright home bathroom / vanity, holding the product
+Generate a fictional, non-identifiable Korean woman in her 20s; do not resemble any real celebrity, actor, public figure, or person in a reference image.
+She has celebrity/editorial-level beauty suitable for a premium Korean beauty campaign: exceptionally beautiful, clean, clear, luminous, healthy-looking complexion with natural skin texture and firm-looking facial contours.
+She wears a pristine white strappy camisole; the clean neck, collarbones, and shoulders are visible in a tasteful cosmetic-ad composition.
+A Korean woman in her 20s in a bright home bathroom / vanity, holding the product
 in one hand at chest height, relaxed natural expression, looking at the product.
 The product occupies less than a quarter of the frame width.
 Keep the product's tube shape and brand color exactly as in the reference image.
-Natural skin with visible texture and pores, no retouching, no skin smoothing,
-no brightening. Even soft daylight. No text overlay. No clinical or medical setting.
+Keep the complexion naturally clear and luminous without whitening, brightening, plastic skin, airbrushing, or beauty-filter smoothing.
+Show one consistent face only; no before/after, split-screen, comparison panel, or implied transformation.
+Natural skin texture and pores remain visible. Even soft daylight. No text overlay. No clinical or medical setting.
 ```
 
 #### 🚨 모델 컷 컴플라이언스 — 카피보다 이미지에서 훨씬 쉽게 위반된다
@@ -278,11 +281,14 @@ no brightening. Even soft daylight. No text overlay. No clinical or medical sett
 | 비포/애프터 구도 (한 프레임 안 좌우 대비 포함) | §3.1 |
 | 클리닉·흰 가운·의료기기·앰플 바이알이 보이는 배경 | §2.3 의료 연상 |
 | 얼굴에 제품을 바른 뒤 "달라진 얼굴"을 보여주는 구도 | 효능 표방 |
+| 실제 연예인·배우·인플루언서와 닮은 얼굴 | 초상권·동일성 오인 위험 |
+| 흰 끈 나시가 아닌 의상, 목·어깨가 가려진 구도 | 이번 모델 캐스팅 지시와 불일치 |
 | 실존 인물과 닮은 얼굴 | 초상권 |
 
-- 연령대는 `PRODUCT.md` 타겟에 맞춘다 — 메인 40·50대, 확장 25~39세.
-  **'나이 든 사람 취급'하는 연출은 금지**다(`PRODUCT.md` 타겟 항목)
-- 손 컷(얼굴 없이 손만)이 가장 안전하다. 얼굴이 꼭 필요한 컷이 아니면 손으로 간다
+- `model_in_use`의 제품 타겟과 광고 모델 캐스팅은 분리한다. 제품 카피의 타겟은 `PRODUCT.md`를 따르되,
+  이 모델 컷은 **20대 한국 여성·프리미엄 뷰티 캠페인 모델급 외모·맑고 탄력 있어 보이는 피부**로 생성한다.
+  이는 효능을 주장하는 전후 비교가 아니라, 고급스러운 광고 비주얼 방향이다.
+- 이번 요청의 `model_in_use`는 얼굴이 포함된 프리미엄 광고 모델 컷을 우선한다. 얼굴이 필요 없는 다른 컷은 손 컷으로 대체할 수 있다
 
 #### 장소는 컨셉에서 나온다 (`concept_scene`)
 
@@ -571,11 +577,14 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 
 모델 컷 (있는 경우)
 
+- [ ] 20대 한국 여성의 가상 모델로 생성됐는가 — 실제 연예인·배우·공인과 닮지 않았는가
+- [ ] 프리미엄 광고 모델급의 아름다운 외모와 맑고 탄력 있어 보이는 피부가 표현됐는가
+- [ ] 새하얀 끈 나시를 입고 목·쇄골·어깨가 깨끗하고 자연스럽게 보이는가
 - [ ] 피부 밝기를 올리지 않았는가
 - [ ] 모공·피부결이 남아 있는가 — 매끄럽게 리터칭한 컷은 효능 암시다
 - [ ] 비포/애프터 구도가 아닌가 (한 프레임 안 좌우 대비 포함)
 - [ ] 클리닉·흰 가운·의료기기·바이알이 배경에 없는가 (§2.3)
-- [ ] 연령대가 `PRODUCT.md` 타겟에 맞는가. '나이 든 사람 취급' 연출이 아닌가
+- [ ] 광고 모델 캐스팅 규칙(20대 한국 여성)을 따르고, 제품 카피 타겟 연령과 혼동하지 않았는가
 
 이미지 공통
 

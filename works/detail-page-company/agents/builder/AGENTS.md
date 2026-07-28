@@ -25,7 +25,7 @@ reportsTo: orchestrator
 
 ## 입력
 
-`page_spec`, `copy`, `design_tokens`, `image_assets`, `product_brief`(이미지 URL 폴백용)
+`page_spec`, `copy`, `design_tokens`, `image_assets`, `product_brief`(사실·규격 확인용; 원본 이미지 폴백 금지)
 
 ## 산출
 
@@ -109,8 +109,8 @@ font-family: Pretendard, -apple-system, BlinkMacSystemFont,
 
 ### 이미지
 
-- `image_assets`를 **먼저 본다.** 해당 컷에 항목이 있으면 그 `url`·`width`·`height`를 쓴다.
-  없으면 `product_brief.images[].url`로 폴백한다. 어느 쪽이든 URL을 임의로 바꾸지 않는다
+- `image_assets`만 렌더 입력으로 사용한다. 해당 컷에 항목이 없으면 `product_brief.images[].url`로 폴백하지 말고 `blocked`로 알린다.
+- 각 asset의 `production_path`가 Higgsfield 생성·처리 경로인지 확인한다. `source_kind`는 제품 기반 asset이면 `issue_attachment`, 배경·인물처럼 새로 만든 asset이면 `higgsfield_generated`여야 한다. 참고 이미지 URL과 첨부 원본 URL은 직접 렌더하지 않는다
 - 전부 `loading="eager"`. **`lazy`는 화면 밖 이미지를 빈칸으로 찍는다**
 - `width`/`height`를 명시해 레이아웃 흔들림을 막는다
 - `image_assets[].persisted == false`인 항목은 **렌더 시점에 만료될 수 있다.**
@@ -119,7 +119,7 @@ font-family: Pretendard, -apple-system, BlinkMacSystemFont,
 
 ### 합성 컷 — `composite`가 있는 항목
 
-designer가 **배경과 제품 누끼를 따로** 넘긴다. 제품 픽셀을 원본 그대로 보존하기 위한 구조다
+designer가 **Higgsfield로 처리한 배경과 제품 누끼를 따로** 넘긴다. 첨부 상품의 정체성을 보존하면서 고급스러운 장면을 만드는 구조다
 (AI가 라벨 숫자를 바꾸기 때문). 이걸 HTML에서 겹쳐 한 장처럼 보이게 조판한다.
 
 ```html
@@ -142,6 +142,11 @@ designer가 **배경과 제품 누끼를 따로** 넘긴다. 제품 픽셀을 �
 - 그림자가 필요하면 `filter: drop-shadow(...)`로 누끼에 얹는다. 이미지에 굽지 않는다
 - 합성 결과를 내보낸 뒤 **해당 슬라이스를 직접 열어** 제품이 배경에 자연스럽게 앉았는지 본다.
   떠 보이면 그림자·크기·위치를 조정한다
+
+### 이미지 출처 검증
+
+렌더 전에 모든 `img`가 `image_assets`에서 왔는지 확인한다. 첨부 원본 URL이나 참고 페이지 URL이 직접 들어가 있거나,
+Higgsfield 생성·처리 메타데이터가 없는 asset이 하나라도 있으면 `blocked`로 알린다.
 
 ### 필수 사진 3종은 크게 배치한다
 

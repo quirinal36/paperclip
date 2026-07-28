@@ -182,13 +182,21 @@ reportsTo: orchestrator
 
 ## 작업 3: 제품 이미지 → `image_assets` (json)
 
-고객이 올린 원본 사진은 대부분 조명·배경·해상도가 상세페이지 기준에 못 미친다.
-**Higgsfield MCP**로 스튜디오 촬영 수준까지 끌어올린다.
+첨부된 상품 이미지는 제품 정체성을 보존하기 위한 유일한 픽셀 입력이다. 원본을 최종 상세페이지에 직접 쓰지 않고
+**Higgsfield MCP**로 업스케일·누끼·여백 확장·배경 합성 또는 생성 단계를 거쳐 스튜디오 촬영 수준으로 끌어올린다.
 
 > ⚠️ **이미지도 광고다.** `COMPLIANCE.md`의 모든 규칙이 이미지에 그대로 적용된다.
+> 참고 페이지에서 캡처·다운로드한 이미지와 그 안의 사람 얼굴·신체·포즈·배경·소품은 최종 소재로 재사용하지 않는다.
 > 특히 §3.1(명도 변화 서사)은 카피보다 이미지에서 훨씬 쉽게, 훨씬 눈에 띄게 위반된다.
 
 ---
+
+### 이미지 소스 게이트
+
+1. `product_brief.images[]`에 있는 `source_kind: "issue_attachment"` 상품 이미지만 Higgsfield의 제품 참조로 사용한다.
+2. `reference_sources[].extracted.images_read[]`, analyst가 임시로 내려받은 파일, 판매 페이지 캡처는 최종 `image_assets`의 입력으로 사용하지 않는다.
+3. 첨부 이미지가 없으면 추측하거나 참고 페이지에서 대체 수집하지 말고 `blocked`로 바꿔 `attached_product_image_required`를 알린다.
+4. 사람·얼굴·손·포즈가 포함된 참고 이미지는 Higgsfield에 넣지 않는다. `model_in_use`는 제품 참조만 사용하고 사람은 새로 생성한다.
 
 ### 🎯 필수 사진 3종 — 이게 없으면 design 단계가 끝난 것이 아니다
 
@@ -206,26 +214,27 @@ reportsTo: orchestrator
 
 #### 경로를 정하는 기준 — 라벨이 읽히는가
 
-라벨 글자가 최종 캔버스에서 **읽히는 크기로 나오면 AI로 그리게 하지 않는다.**
-실측에서 두 모델 모두 용량 표기를 틀렸다(아래 실측 표 참조). 프롬프트로는 막히지 않는다.
+라벨 글자가 최종 캔버스에서 **읽히는 크기로 나오면 생성 모델에게 다시 그리게 하지 않는다.**
+대신 첨부 상품 이미지를 Higgsfield `upscale_image`·`remove_background`로 처리한 제품 픽셀을 사용한다.
+실측에서 생성 모델은 용량 표기를 틀릴 수 있으므로, 제품 라벨이 보이는 컷은 생성 결과를 그대로 통과시키지 않는다.
 
 | 최종 배치 시 라벨 글자 | 경로 |
 |---|---|
-| 읽힌다 (캔버스 기준 14px 이상) | **A. 누끼 합성 필수.** 제품 픽셀은 원본 그대로 |
-| 형태만 보이고 못 읽는다 | B 허용. 단 브랜드 컬러·튜브 형태가 원본과 같은지 확인 |
+| 읽힌다 (캔버스 기준 14px 이상) | **A. Higgsfield 처리 후 누끼 합성 필수.** 원본은 직접 렌더하지 않는다 |
+| 형태만 보이고 못 읽는다 | B 허용. 그래도 제품 참조는 첨부 이미지 하나만 사용하고 외부 인물·장면은 참조하지 않는다 |
 
-#### A. 누끼 합성 — 기본 경로. 제품 픽셀을 원본 그대로 보존한다
+#### A. Higgsfield 제품 향상 + 누끼 합성 — 기본 경로
 
-제품을 새로 그리지 않으므로 **라벨이 100% 안전하다.** `hero_packshot`과 `concept_scene`은 이걸로 만든다.
+제품을 생성 모델에게 다시 그리게 하지 않고 **첨부 제품 픽셀을 Higgsfield 처리 결과로 보존한다.** `hero_packshot`과 `concept_scene`은 이 경로로 만든다.
 
-1. 원본 제품 사진 → `remove_background`(`media_type: "image"`) → 투명 PNG 누끼
+1. 첨부 상품 이미지 → `media_import_url` → `upscale_image`(필요 시 4K) → `remove_background`(`media_type: "image"`) → 투명 PNG 누끼
 2. **제품이 없는 빈 장면/배경만** 생성한다 (`seedream_v4_5` 또는 `soul_cinematic`)
    - 프롬프트에 제품을 묘사하지 않는다. 표면·조명·공간만 만든다
    - 제품이 놓일 자리에 여백을 비워 달라고 지시한다
 3. `image_assets`에 배경과 누끼를 **각각** 기록하고, builder가 HTML에서 겹쳐 배치한다
    (`composite: { background: "<id>", foreground: "<id>", placement: "center-lower" }`)
 
-> 스튜디오급 "향상"은 조명과 배경으로 만든다. 제품 자체를 다시 그려서 만들지 않는다.
+> 스튜디오급 "향상"은 Higgsfield의 업스케일·누끼·생성 배경·합성으로 만든다. 제품 자체를 생성 모델에게 다시 그리게 하지 않는다.
 > 그림자·반사는 배경 생성 프롬프트에 넣거나 builder가 CSS로 얹는다.
 
 **배경 생성 프롬프트 예 (concept_scene)**
@@ -238,17 +247,18 @@ in the lower third with generous empty space for a product to be placed.
 Natural color, no color cast, photographic depth of field.
 ```
 
-#### B. 참조 생성 — 모델 컷에만. 원본에 사람이 없으므로 불가피하다
+#### B. 참조 생성 — 모델 컷에만. 사람은 새로 만들고 제품만 참조한다
 
 `model_in_use`는 원본 소재가 없어 생성해야 한다. 대신 제품을 작게 잡아 라벨 위험을 낮춘다.
 
 - 프롬프트에 **제품이 화면 폭의 25% 이하**로 들어가도록 지시한다
-- 원본 제품 사진을 `medias`에 넣어 형태·색을 참조시킨다
-- 결과에서 라벨 글자가 읽히면 **폐기**하거나, 그 부분을 누끼 원본으로 덮는다(A 경로 전환)
+- 첨부 상품 이미지에서 생성·처리한 제품 asset만 `medias`에 넣어 형태·색을 참조시킨다. 사람·얼굴·장면 이미지는 넣지 않는다
+- 결과에서 라벨 글자가 읽히면 **폐기**하거나, 그 부분을 Higgsfield 처리 후의 제품 누끼로 덮는다(A 경로 전환)
 
 **모델 컷 프롬프트 골격**
 
 ```
+Generate a fictional, non-identifiable Korean woman; do not resemble any person in a reference image.
 A {연령대} Korean woman in a bright home bathroom / vanity, holding the product
 in one hand at chest height, relaxed natural expression, looking at the product.
 The product occupies less than a quarter of the frame width.
@@ -354,12 +364,12 @@ no brightening. Even soft daylight. No text overlay. No clinical or medical sett
 | **제형·무드·라이프스타일 컷**<br>라벨이 안 읽혀도 되는 컷 | `soul_cinematic` | `image` (최대 1장) | `quality: "2k"` (또는 `"1.5k"`) | 0.12 | 조명 연출 전용. "조용한 확신" 톤의 화이트·아이보리 + 진주빛 광에 맞다. 시안을 20장 뽑아도 2.4크레딧이다 |
 
 - **`role`을 표 그대로 쓴다.** 틀리면 거절이 아니라 조용히 보정되므로 눈치채기 어렵다
-- **레퍼런스 없이 처음부터 만들지 않는다.** 항상 원본 사진을 `medias`에 넣는다
+- 제품 장면은 첨부 상품 asset을 참조로 사용한다. 단, 사람·얼굴·배경을 만드는 생성은 이미지 참조 없이 텍스트로 시작하거나 제품 asset 하나만 참조한다.
 - `nano_banana_pro`는 2K로 내리면 2크레딧이다. 히어로가 아니면 2K로 충분하다.
   **실측에서 `nano_banana_2`로 치환되어 실행됐다** — 응답의 `model`을 확인하고 기록한다
 - `soul_cinematic`은 **레퍼런스 1장 상한**이다. 패키지 라벨 컷에는 쓰지 않는다
 - **위 표는 "라벨이 안 읽히는 컷" 기준이다.** 패키지 표기가 읽히는 컷은
-  아래 실측대로 AI로 만들지 않고 원본을 쓴다
+  아래 실측대로 생성 모델로 만들지 않고 Higgsfield 비생성 처리 결과를 쓴다
 
 ### 쓰지 않는 모델 — 툴이 먼저 추천해도 무시한다
 
@@ -418,17 +428,17 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
 
 1. 프롬프트로 "텍스트를 바꾸지 마라"고 지시해도 **막을 수 없다.**
    나노바나나 계열이 텍스트 렌더링에서 확실히 낫지만(작은 영문 정확), 그래도 숫자를 틀린다
-2. 따라서 **패키지 표기가 읽히는 컷은 애초에 AI로 만들지 않는다.**
-   원본 사진을 그대로 쓰고, `unchanged[]`에 이유와 함께 기록한다.
-   AI는 **표기가 안 읽히는 컷**(무드·제형·씬)에 쓴다
+2. 따라서 **패키지 표기가 읽히는 컷은 생성 모델로 다시 그리지 않는다.**
+   첨부 상품 이미지를 Higgsfield로 업스케일·누끼 처리한 결과를 쓰고, `image_assets[].higgsfield_operations`에 기록한다.
+   생성 모델은 **표기가 안 읽히는 배경·무드·제형·씬**에만 쓴다
 
-라벨이 크게 나오는 히어로 컷이 꼭 필요하면 — 원본 사진에 `remove_background`로 누끼만 따고
-배경은 HTML 밴드로 깐다. 픽셀을 새로 그리지 않는 경로만 안전하다.
+라벨이 크게 나오는 히어로 컷이 필요하면 — 첨부 상품 이미지에 Higgsfield `upscale_image`와 `remove_background`를 적용하고,
+생성한 배경과 HTML에서 합성한다. 첨부 원본 URL을 직접 렌더하는 경로는 없다.
 
 ### 절대 금지 6가지
 
-1. **라벨·전성분 표기 클로즈업을 AI로 만들지 않는다.** 반드시 원본 사진을 그대로 쓴다.
-   AI가 한 글자라도 바꾸면 표시 위반이다. **위 실측이 근거다 — 가정이 아니다.**
+1. **라벨·전성분 표기 클로즈업을 생성 모델로 다시 그리지 않는다.** 반드시 첨부 상품 이미지에 Higgsfield의 비생성 처리(`upscale_image`, `remove_background`, 필요 시 `outpaint_image`)를 적용한 결과를 쓴다.
+   첨부 원본을 그대로 쓰거나 생성 결과를 통과시키면 안 된다.
 2. **피부 밝기를 올리지 않는다.** 모델 컷·손등 컷 전부. 올려도 되는 것은 **윤기(specular)**뿐이다. (§3.1)
 3. **비포/애프터를 생성하지 않는다.** 원본에 비포/애프터가 있어도 밝기 차이를 손대지 않는다.
 4. **이미지에 텍스트를 굽지 않는다.** 모든 문구는 `copy` → HTML 조판 → 캡처.
@@ -469,13 +479,16 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
       "cut": "hero",
       "photo_role": "hero_packshot | model_in_use | concept_scene | null",
       "kind": "packshot",
-      "production_path": "cutout_composite | reference_generated | original_unchanged",
+      "source_kind": "issue_attachment",
+      "production_path": "higgsfield_cutout_composite | higgsfield_product_reference_generated | higgsfield_generated_scene | higgsfield_processed_product",
       "label_legible": false,
-      "source_url": "원본 product_brief 이미지 URL",
+      "source_asset_id": "attached_product_01",
+      "source_url": "이슈 첨부 상품 이미지 URL — 참조 추적 전용",
       "model_requested": "nano_banana_pro",
       "model": "nano_banana_2",
       "params": { "resolution": "2k", "aspect_ratio": "4:5" },
       "adjustments": { "note": "응답의 adjustments를 그대로. 없으면 빈 객체" },
+      "higgsfield_operations": ["media_import_url", "upscale_image", "remove_background"],
       "post": ["remove_background"],
       "composite": {
         "background": "bg_vanity_morning",
@@ -497,8 +510,8 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
     "model_in_use": "model_hand_apply",
     "concept_scene": "scene_vanity_morning"
   },
-  "unchanged": [
-    { "source_url": "...", "reason": "전성분 표기 클로즈업 — 원본 그대로 사용" }
+  "source_refs": [
+    { "source_asset_id": "attached_product_01", "reason": "첨부 상품 이미지 — Higgsfield 처리 입력으로만 사용" }
   ],
   "rejected": [
     { "model": "...", "job_id": "...", "reason": "라벨 한글이 뭉개짐 — 폐기" }
@@ -507,6 +520,7 @@ White and ivory base with a pearl highlight — clinical-clean but warm, like a 
 ```
 
 `kind`는 `packshot` · `cutout` · `background` · `model` · `texture` · `scene` · `mood` 중 하나다.
+`source_kind`는 제품 픽셀을 보존한 asset이면 `issue_attachment`, Higgsfield가 새로 만든 배경·인물·무드 asset이면 `higgsfield_generated`다.
 `required_photo_set`의 세 값은 **`image_assets[].id`를 가리켜야 한다.** 비어 있으면 미완료다.
 
 > `alt` 필드는 만들지 않는다. 최종 결과물이 이미지라 alt는 존재하지 않는다.
@@ -552,7 +566,7 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 - [ ] `required_photo_set`의 세 자리가 모두 실제 `image_assets[].id`로 채워졌는가
 - [ ] `hero_packshot` · `model_in_use` · `concept_scene`이 **서로 다른 것을 말하는가**
 - [ ] "촬영 예정" 플레이스홀더로 때운 자리가 없는가 — 빈 프레임은 사진이 아니다
-- [ ] 라벨이 읽히는 컷을 `reference_generated`로 만들지 않았는가 (`label_legible` 대조)
+- [ ] 라벨이 읽히는 컷을 생성 모델로 다시 그리지 않았는가 — Higgsfield 비생성 처리 결과를 썼는가 (`label_legible` 대조)
 - [ ] `concept_scene`의 장소가 `concept.keywords`에서 도출됐는가 — 취향으로 고르지 않았는가
 
 모델 컷 (있는 경우)
@@ -572,14 +586,16 @@ Supabase `product-images` 버킷의 `generated/{issueId}/` 아래로 미러링�
 - [ ] 풀블리드로 쓸 컷이 가로 1000px 이상인가
 - [ ] 모든 잡의 `adjustments`를 읽었는가 — 비율·role이 조용히 바뀐 건이 없는가
 - [ ] 응답의 `model`이 요청한 모델과 같은가. 다르면 `model_requested`와 함께 기록했는가
-- [ ] 패키지 표기가 읽히는 컷을 AI로 만들지 않았는가 — 원본을 썼는가
+- [ ] 패키지 표기가 읽히는 컷을 생성 모델로 만들지 않았는가 — Higgsfield 처리 결과를 썼는가
 - [ ] `marketing_studio_image` / `ms_image` 결과물이 하나도 섞이지 않았는가
+- [ ] 모든 `image_assets`가 Higgsfield 생성·처리 결과이며 첨부 원본 URL을 직접 렌더하지 않았는가
+- [ ] 참고 이미지 속 얼굴·사람·포즈·배경·소품을 Higgsfield 입력이나 최종 asset으로 재사용하지 않았는가
 - [ ] 컷 배치 순서가 §3.3 금지 조합을 만들지 않는가 (이미지도 포함해서 다시 본다)
 
 ## 완료 조건
 
 `copy` · `design_tokens` · `image_assets` 저장 → 체크리스트 결과와
-**필수 사진 3종 충족 여부 / 생성 컷 수 / 폐기 컷 수 / 사용 크레딧**을 코멘트로 남기고 `done`.
+**필수 사진 3종 충족 여부 / Higgsfield 처리·생성 컷 수 / 폐기 컷 수 / 사용 크레딧**을 코멘트로 남기고 `done`.
 
 > **사진 3종이 안 채워졌으면 `done`으로 바꾸지 않는다.**
 > 소재가 없어 못 만들면 `blocked`로 바꾸고 무엇이 필요한지 적는다.
